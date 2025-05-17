@@ -44,7 +44,7 @@ celery_app.conf.beat_schedule = {
         "schedule": crontab(day_of_month=1, hour=0, minute=0),  # Run on the 1st of every month
     },
     "check-low-stock-ingredients": {
-        "task": "backend.main.check_low_stock_ingredients",
+        "task": "backend.main.check_low_stock-ingredients",
         "schedule": crontab(hour="*/6", minute=0),  # Run every 6 hours
     },
 }
@@ -1263,9 +1263,23 @@ async def websocket_endpoint(websocket: WebSocket):
     try:
         while True:
             data = await websocket.receive_text()
-            await manager.broadcast(data)
+            # Process the received data
+            try:
+                message_data = json.loads(data)
+                # You can add custom processing here
+                
+                # Broadcast the message to all connected clients
+                await manager.broadcast(data)
+            except json.JSONDecodeError:
+                # If not valid JSON, just broadcast as is
+                await manager.broadcast(data)
     except WebSocketDisconnect:
         manager.disconnect(websocket)
+        await manager.broadcast(json.dumps({
+            "type": "connection_update",
+            "message": "A client has disconnected",
+            "timestamp": datetime.utcnow().isoformat()
+        }))
 
 # Celery Tasks
 @celery_app.task
@@ -1381,7 +1395,22 @@ def check_low_stock_ingredients():
     finally:
         db.close()
 
+# Root endpoint
+@app.get("/")
+async def root():
+    return {"message": "Welcome to the Kindergarten Meal Tracking & Inventory Management System API"}
+
+# Include routers
+from .database import engine, Base
+from .models.models import *
+from .routers import auth, users, ingredients
+from .websocket import manager
+
+app.include_router(auth.router)
+app.include_router(users.router)
+app.include_router(ingredients.router)
+
 # Main entry point
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)

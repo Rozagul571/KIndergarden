@@ -1,18 +1,24 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Bell, Check, ShoppingCart, AlertCircle, ChefHat } from "lucide-react"
+import { Bell, Check, ShoppingCart, AlertCircle, ChefHat, Package, Clock } from "lucide-react"
+import { useWebSocket } from "@/contexts/websocket-context"
+import { motion } from "framer-motion"
 
 interface Notification {
   id: number
-  type: "meal_served" | "order_status" | "inventory_alert" | "system"
+  type: "meal_served" | "order_status" | "inventory_alert" | "inventory_delivery" | "inventory_update" | "system"
   message: string
   timestamp: string
   read: boolean
+  user?: {
+    name: string
+    id: number
+  }
 }
 
 // Sample data for demonstration
@@ -21,48 +27,64 @@ const initialNotifications: Notification[] = [
     id: 1,
     type: "meal_served",
     message: "Maria Garcia served 10 portions of Osh (Plov)",
-    timestamp: "2025-05-12T09:30:00",
+    timestamp: "2025-05-17T09:30:00",
     read: false,
+    user: {
+      name: "Maria Garcia",
+      id: 2,
+    },
   },
   {
     id: 2,
     type: "order_status",
-    message: "Order #3 for Chicken has been approved",
-    timestamp: "2025-05-12T08:45:00",
+    message: "Order #3 for Chicken has been approved by Admin",
+    timestamp: "2025-05-17T08:45:00",
     read: false,
+    user: {
+      name: "Admin",
+      id: 1,
+    },
   },
   {
     id: 3,
     type: "inventory_alert",
     message: "Potato is running low (500g remaining)",
-    timestamp: "2025-05-12T08:30:00",
+    timestamp: "2025-05-17T08:30:00",
     read: false,
   },
   {
     id: 4,
-    type: "meal_served",
-    message: "David Lee served 15 portions of Lagman",
-    timestamp: "2025-05-11T12:15:00",
+    type: "inventory_delivery",
+    message: "David Lee added 2kg of Rice to inventory",
+    timestamp: "2025-05-16T15:15:00",
     read: true,
+    user: {
+      name: "David Lee",
+      id: 3,
+    },
   },
   {
     id: 5,
-    type: "order_status",
-    message: "Order #2 for Rice has been delivered",
-    timestamp: "2025-05-11T11:30:00",
+    type: "inventory_update",
+    message: "Admin updated Carrot quantity from 1kg to 500g",
+    timestamp: "2025-05-16T14:30:00",
     read: true,
+    user: {
+      name: "Admin",
+      id: 1,
+    },
   },
   {
     id: 6,
     type: "inventory_alert",
     message: "Carrot is out of stock",
-    timestamp: "2025-05-11T10:45:00",
+    timestamp: "2025-05-16T10:45:00",
     read: true,
   },
   {
     id: 7,
     type: "system",
-    message: "Monthly report for April 2025 has been generated",
+    message: "Monthly report for May 2025 has been generated",
     timestamp: "2025-05-01T00:00:00",
     read: true,
   },
@@ -70,6 +92,28 @@ const initialNotifications: Notification[] = [
 
 export default function NotificationsPage() {
   const [notifications, setNotifications] = useState<Notification[]>(initialNotifications)
+  const { lastMessage } = useWebSocket()
+
+  // Add new notifications from WebSocket
+  useEffect(() => {
+    if (lastMessage && lastMessage.message) {
+      const newNotification: Notification = {
+        id: lastMessage.id || Date.now(),
+        type: (lastMessage.type as any) || "system",
+        message: lastMessage.message,
+        timestamp: lastMessage.timestamp || new Date().toISOString(),
+        read: false,
+        user: lastMessage.user,
+      }
+
+      setNotifications((prev) => {
+        // Check if notification with this ID already exists
+        const exists = prev.some((n) => n.id === newNotification.id)
+        if (exists) return prev
+        return [newNotification, ...prev]
+      })
+    }
+  }, [lastMessage])
 
   const markAsRead = (id: number) => {
     setNotifications(
@@ -93,6 +137,10 @@ export default function NotificationsPage() {
         return <ShoppingCart className="h-5 w-5" />
       case "inventory_alert":
         return <AlertCircle className="h-5 w-5" />
+      case "inventory_delivery":
+        return <Package className="h-5 w-5" />
+      case "inventory_update":
+        return <Clock className="h-5 w-5" />
       case "system":
         return <Bell className="h-5 w-5" />
       default:
@@ -108,11 +156,30 @@ export default function NotificationsPage() {
         return "bg-blue-100 text-blue-800"
       case "inventory_alert":
         return "bg-red-100 text-red-800"
-      case "system":
+      case "inventory_delivery":
+        return "bg-amber-100 text-amber-800"
+      case "inventory_update":
         return "bg-purple-100 text-purple-800"
+      case "system":
+        return "bg-gray-100 text-gray-800"
       default:
         return "bg-gray-100 text-gray-800"
     }
+  }
+
+  const container = {
+    hidden: { opacity: 0 },
+    show: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.1,
+      },
+    },
+  }
+
+  const item = {
+    hidden: { opacity: 0, y: 20 },
+    show: { opacity: 1, y: 0 },
   }
 
   return (
@@ -138,11 +205,12 @@ export default function NotificationsPage() {
               <CardDescription>View all system notifications and alerts.</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
+              <motion.div className="space-y-4" variants={container} initial="hidden" animate="show">
                 {notifications.map((notification) => (
-                  <div
+                  <motion.div
                     key={notification.id}
                     className={`p-4 rounded-lg border ${notification.read ? "bg-background" : "bg-muted"}`}
+                    variants={item}
                   >
                     <div className="flex items-start justify-between">
                       <div className="flex items-start space-x-4">
@@ -167,9 +235,9 @@ export default function NotificationsPage() {
                         </Badge>
                       </div>
                     </div>
-                  </div>
+                  </motion.div>
                 ))}
-              </div>
+              </motion.div>
             </CardContent>
           </Card>
         </TabsContent>
@@ -180,10 +248,10 @@ export default function NotificationsPage() {
               <CardDescription>View your unread notifications and alerts.</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
+              <motion.div className="space-y-4" variants={container} initial="hidden" animate="show">
                 {getUnreadNotifications().length > 0 ? (
                   getUnreadNotifications().map((notification) => (
-                    <div key={notification.id} className="p-4 rounded-lg border bg-muted">
+                    <motion.div key={notification.id} className="p-4 rounded-lg border bg-muted" variants={item}>
                       <div className="flex items-start justify-between">
                         <div className="flex items-start space-x-4">
                           <div className={`p-2 rounded-full ${getNotificationColor(notification.type)}`}>
@@ -203,7 +271,7 @@ export default function NotificationsPage() {
                           <Badge variant="secondary">New</Badge>
                         </div>
                       </div>
-                    </div>
+                    </motion.div>
                   ))
                 ) : (
                   <div className="text-center py-8">
@@ -212,7 +280,7 @@ export default function NotificationsPage() {
                     <p className="text-muted-foreground">You're all caught up!</p>
                   </div>
                 )}
-              </div>
+              </motion.div>
             </CardContent>
           </Card>
         </TabsContent>

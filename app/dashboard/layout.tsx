@@ -4,6 +4,7 @@ import { AuthButton } from "@/components/auth-button"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { ChefHat, Settings, Bell } from "lucide-react"
+import { WebSocketStatus } from "@/components/websocket-status"
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -43,7 +44,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                   <Settings className="h-5 w-5" />
                 </Button>
               </Link>
-              <AuthButton />
+              <div className="flex items-center gap-2">
+                <WebSocketStatus />
+                <AuthButton />
+              </div>
             </nav>
           </div>
         </header>
