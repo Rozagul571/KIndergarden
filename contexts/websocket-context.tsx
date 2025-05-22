@@ -21,16 +21,12 @@ interface Notification {
   message: string
   timestamp: string
   read: boolean
-  triggeredBy?: {
-    id?: number
-    name?: string
-    role?: string
-  }
   user?: {
     id?: number
     name?: string
     role?: string
   }
+  data?: any
 }
 
 const WebSocketContext = createContext<WebSocketContextType | undefined>(undefined)
@@ -175,12 +171,29 @@ export function WebSocketProvider({
         message: data.message || "New notification",
         timestamp: data.timestamp || new Date().toISOString(),
         read: false,
-        triggeredBy: data.user || { name: data.userName || "System" },
         user: data.user || { name: data.userName || "System" },
+        data: data.data || {},
       }
 
-      // Add to notifications - only for admin users
-      if (user?.role === "admin") {
+      // Only show notifications relevant to the user's role
+      const shouldShowNotification = () => {
+        // Admin sees all notifications
+        if (user?.role === "admin") return true
+
+        // Cooks only see cook-related notifications
+        if (user?.role === "cook") {
+          return data.type?.includes("meal") || data.type?.includes("inventory") || data.user?.id === user.id
+        }
+
+        // Managers see inventory and order notifications
+        if (user?.role === "manager") {
+          return data.type?.includes("inventory") || data.type?.includes("order") || data.user?.id === user.id
+        }
+
+        return false
+      }
+
+      if (shouldShowNotification()) {
         setNotifications((prev) => {
           // Check if notification with this ID already exists
           const exists = prev.some((n) => n.id === notification.id)
@@ -189,14 +202,16 @@ export function WebSocketProvider({
         })
 
         // Show toast notification for important events
-        toast({
-          title: notification.type.charAt(0).toUpperCase() + notification.type.slice(1).replace(/_/g, " "),
-          description: notification.message,
-          variant: notification.type.includes("error") ? "destructive" : "default",
-        })
+        if (data.type && !data.type.includes("system")) {
+          toast({
+            title: data.type.charAt(0).toUpperCase() + data.type.slice(1).replace(/_/g, " "),
+            description: notification.message,
+            variant: data.type.includes("error") ? "destructive" : "default",
+          })
+        }
       }
     },
-    [toast, user?.role],
+    [toast, user?.role, user?.id],
   )
 
   // Function to send messages through WebSocket
@@ -291,17 +306,12 @@ export function WebSocketProvider({
         type: notificationType,
         message: notificationMessage,
         timestamp: timestamp,
-        read: false,
-        triggeredBy: {
-          id: msgObj.user?.id,
-          name: userName,
-          role: msgObj.user?.role || "user",
-        },
         user: {
           id: msgObj.user?.id,
           name: userName,
           role: msgObj.user?.role || "user",
         },
+        data: msgObj.data || {},
       }
 
       // Process the mock message

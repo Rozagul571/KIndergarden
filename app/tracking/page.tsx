@@ -1,212 +1,213 @@
 "use client"
 
+import { Badge } from "@/components/ui/badge"
+
 import { useState, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Calendar, Clock, Download, Filter, Search, Users, Utensils } from "lucide-react"
+import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { DateRangePicker } from "@/components/date-range-picker"
-import { motion } from "framer-motion"
 import { format } from "date-fns"
-import { useWebSocket } from "@/contexts/websocket-context"
+import { Download, Search, Utensils, User, Calendar, Clock } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
+import { useWebSocket } from "@/contexts/websocket-context"
+import { motion } from "framer-motion"
 
-// Sample data for demonstration
-interface MealServingRecord {
+type MealServing = {
   id: number
-  staffName: string
-  staffRole: string
-  mealName: string
+  meal: {
+    id: number
+    name: string
+  }
   portions: number
-  timestamp: string
+  serving_date: string
+  user: {
+    id: number
+    name: string
+    role: string
+  }
 }
 
-const initialServings: MealServingRecord[] = [
-  {
-    id: 1,
-    staffName: "Maria Garcia",
-    staffRole: "cook",
-    mealName: "Osh (Plov)",
-    portions: 10,
-    timestamp: "2025-05-11T09:30:00",
-  },
-  {
-    id: 2,
-    staffName: "David Lee",
-    staffRole: "cook",
-    mealName: "Lagman",
-    portions: 15,
-    timestamp: "2025-05-11T12:15:00",
-  },
-  {
-    id: 3,
-    staffName: "Maria Garcia",
-    staffRole: "cook",
-    mealName: "Somsa",
-    portions: 8,
-    timestamp: "2025-05-10T11:45:00",
-  },
-  {
-    id: 4,
-    staffName: "Sarah Johnson",
-    staffRole: "manager",
-    mealName: "Manti",
-    portions: 12,
-    timestamp: "2025-05-10T10:30:00",
-  },
-  {
-    id: 5,
-    staffName: "David Lee",
-    staffRole: "cook",
-    mealName: "Shurpa",
-    portions: 6,
-    timestamp: "2025-05-09T13:20:00",
-  },
-  {
-    id: 6,
-    staffName: "Maria Garcia",
-    staffRole: "cook",
-    mealName: "Osh (Plov)",
-    portions: 14,
-    timestamp: "2025-05-09T09:15:00",
-  },
-  {
-    id: 7,
-    staffName: "John Smith",
-    staffRole: "admin",
-    mealName: "Lagman",
-    portions: 10,
-    timestamp: "2025-05-08T11:30:00",
-  },
-  {
-    id: 8,
-    staffName: "David Lee",
-    staffRole: "cook",
-    mealName: "Somsa",
-    portions: 20,
-    timestamp: "2025-05-08T10:00:00",
-  },
-  {
-    id: 9,
-    staffName: "Cook",
-    staffRole: "cook",
-    mealName: "Osh (Plov)",
-    portions: 5,
-    timestamp: "2025-05-07T14:30:00",
-  },
-]
-
-export default function UserTrackingPage() {
-  const [servings, setServings] = useState<MealServingRecord[]>(initialServings)
-  const [filteredServings, setFilteredServings] = useState<MealServingRecord[]>(initialServings)
+export default function TrackingPage() {
+  const [mealServings, setMealServings] = useState<MealServing[]>([])
+  const [filteredServings, setFilteredServings] = useState<MealServing[]>([])
+  const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState("")
-  const [staffFilter, setStaffFilter] = useState("all")
-  const [mealFilter, setMealFilter] = useState("all")
   const [dateRange, setDateRange] = useState<{ from: Date | undefined; to: Date | undefined }>({
     from: undefined,
     to: undefined,
   })
-  const { notifications, lastMessage } = useWebSocket()
+  const [roleFilter, setRoleFilter] = useState("all")
   const { toast } = useToast()
+  const { lastMessage } = useWebSocket()
 
-  // Get unique staff names and meal names for filters
-  const staffNames = Array.from(new Set(servings.map((s) => s.staffName)))
-  const mealNames = Array.from(new Set(servings.map((s) => s.mealName)))
+  // Fetch meal servings data
+  useEffect(() => {
+    const fetchMealServings = async () => {
+      try {
+        // In a real app, this would be an API call
+        // For now, we'll use mock data
+        const mockData: MealServing[] = [
+          {
+            id: 1,
+            meal: { id: 1, name: "Osh (Plov)" },
+            portions: 15,
+            serving_date: "2025-05-23T12:30:00",
+            user: { id: 2, name: "Og'iloy Tursunova", role: "cook" },
+          },
+          {
+            id: 2,
+            meal: { id: 2, name: "Lagman" },
+            portions: 12,
+            serving_date: "2025-05-23T09:15:00",
+            user: { id: 3, name: "Muxtasar Azizova", role: "cook" },
+          },
+          {
+            id: 3,
+            meal: { id: 3, name: "Somsa" },
+            portions: 20,
+            serving_date: "2025-05-23T10:45:00",
+            user: { id: 5, name: "Aziza Rahimova", role: "cook" },
+          },
+          {
+            id: 4,
+            meal: { id: 1, name: "Osh (Plov)" },
+            portions: 10,
+            serving_date: "2025-05-11T09:30:00",
+            user: { id: 3, name: "Muxtasar Azizova", role: "cook" },
+          },
+          {
+            id: 5,
+            meal: { id: 2, name: "Lagman" },
+            portions: 15,
+            serving_date: "2025-05-11T12:15:00",
+            user: { id: 7, name: "Odina Rustamova", role: "cook" },
+          },
+          {
+            id: 6,
+            meal: { id: 3, name: "Somsa" },
+            portions: 8,
+            serving_date: "2025-05-10T11:45:00",
+            user: { id: 3, name: "Muxtasar Azizova", role: "cook" },
+          },
+          {
+            id: 7,
+            meal: { id: 4, name: "Manti" },
+            portions: 12,
+            serving_date: "2025-05-10T10:30:00",
+            user: { id: 4, name: "Kamola Umarova", role: "manager" },
+          },
+          {
+            id: 8,
+            meal: { id: 5, name: "Shurpa" },
+            portions: 6,
+            serving_date: "2025-05-09T13:20:00",
+            user: { id: 7, name: "Odina Rustamova", role: "cook" },
+          },
+          {
+            id: 9,
+            meal: { id: 1, name: "Osh (Plov)" },
+            portions: 14,
+            serving_date: "2025-05-09T09:15:00",
+            user: { id: 3, name: "Muxtasar Azizova", role: "cook" },
+          },
+          {
+            id: 10,
+            meal: { id: 2, name: "Lagman" },
+            portions: 10,
+            serving_date: "2025-05-08T11:30:00",
+            user: { id: 1, name: "Surayyo Karimova", role: "admin" },
+          },
+          {
+            id: 11,
+            meal: { id: 3, name: "Somsa" },
+            portions: 20,
+            serving_date: "2025-05-08T10:00:00",
+            user: { id: 7, name: "Odina Rustamova", role: "cook" },
+          },
+        ]
 
-  // Listen for new meal servings via WebSocket
+        setMealServings(mockData)
+        setFilteredServings(mockData)
+        setLoading(false)
+      } catch (error) {
+        console.error("Error fetching meal servings:", error)
+        toast({
+          title: "Error",
+          description: "Failed to fetch meal servings data",
+          variant: "destructive",
+        })
+        setLoading(false)
+      }
+    }
+
+    fetchMealServings()
+  }, [toast])
+
+  // Listen for real-time updates
   useEffect(() => {
     if (lastMessage && lastMessage.type === "meal_served") {
-      try {
-        const data = lastMessage.data
-        if (data && data.mealName && data.portions && data.servedBy) {
-          // Create a new serving record from the WebSocket data
-          const newServing: MealServingRecord = {
-            id: Date.now(), // Use timestamp as ID
-            staffName: data.servedBy,
-            staffRole: lastMessage.user?.role || "cook",
-            mealName: data.mealName,
-            portions: data.portions,
-            timestamp: data.servedAt || new Date().toISOString(),
-          }
-
-          // Add to servings
-          setServings((prev) => [newServing, ...prev])
-
-          toast({
-            title: "New Meal Serving",
-            description: `${newServing.staffName} served ${newServing.portions} portions of ${newServing.mealName}`,
-          })
-        }
-      } catch (error) {
-        console.error("Error processing meal serving notification:", error)
-      }
+      // In a real app, you would fetch the updated data
+      // For now, we'll just show a toast
+      toast({
+        title: "New Meal Served",
+        description: lastMessage.message,
+      })
     }
   }, [lastMessage, toast])
 
-  // Apply filters when any filter changes
+  // Apply filters
   useEffect(() => {
-    let filtered = [...servings]
+    let filtered = [...mealServings]
 
-    // Apply search term filter
+    // Apply search filter
     if (searchTerm) {
-      const term = searchTerm.toLowerCase()
       filtered = filtered.filter(
-        (s) => s.staffName.toLowerCase().includes(term) || s.mealName.toLowerCase().includes(term),
+        (serving) =>
+          serving.meal.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          serving.user.name.toLowerCase().includes(searchTerm.toLowerCase()),
       )
     }
 
-    // Apply staff filter
-    if (staffFilter !== "all") {
-      filtered = filtered.filter((s) => s.staffName === staffFilter)
-    }
-
-    // Apply meal filter
-    if (mealFilter !== "all") {
-      filtered = filtered.filter((s) => s.mealName === mealFilter)
-    }
-
     // Apply date range filter
-    if (dateRange.from) {
-      filtered = filtered.filter((s) => new Date(s.timestamp) >= dateRange.from!)
-    }
-    if (dateRange.to) {
-      filtered = filtered.filter((s) => new Date(s.timestamp) <= dateRange.to!)
+    if (dateRange.from && dateRange.to) {
+      filtered = filtered.filter((serving) => {
+        const servingDate = new Date(serving.serving_date)
+        return servingDate >= dateRange.from! && servingDate <= dateRange.to!
+      })
     }
 
-    // Sort by timestamp (newest first)
-    filtered.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
+    // Apply role filter
+    if (roleFilter !== "all") {
+      filtered = filtered.filter((serving) => serving.user.role === roleFilter)
+    }
 
     setFilteredServings(filtered)
-  }, [searchTerm, staffFilter, mealFilter, dateRange, servings])
+  }, [searchTerm, dateRange, roleFilter, mealServings])
 
-  // Function to export data as CSV
+  // Export to CSV
   const exportToCSV = () => {
     try {
-      const headers = ["Staff Name", "Staff Role", "Meal Name", "Portions", "Date", "Time"]
-      const csvRows = [
-        headers.join(","),
-        ...filteredServings.map((s) => {
-          const date = new Date(s.timestamp)
-          return [
-            s.staffName,
-            s.staffRole,
-            s.mealName,
-            s.portions,
-            format(date, "yyyy-MM-dd"),
-            format(date, "HH:mm:ss"),
-          ].join(",")
-        }),
-      ]
+      // Create CSV content
+      const headers = ["Staff Name", "Role", "Meal", "Portions", "Date", "Time"]
+      const rows = filteredServings.map((serving) => [
+        serving.user.name,
+        serving.user.role,
+        serving.meal.name,
+        serving.portions,
+        format(new Date(serving.serving_date), "MMM dd, yyyy"),
+        format(new Date(serving.serving_date), "hh:mm a"),
+      ])
 
-      const csvString = csvRows.join("\n")
-      const blob = new Blob([csvString], { type: "text/csv;charset=utf-8;" })
+      const csvContent = [headers, ...rows].map((row) => row.join(",")).join("\n")
+
+      // Create a blob and download link
+      const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" })
       const url = URL.createObjectURL(blob)
       const link = document.createElement("a")
       link.setAttribute("href", url)
-      link.setAttribute("download", `meal_servings_${format(new Date(), "yyyy-MM-dd")}.csv`)
+      link.setAttribute("download", `meal-servings-${format(new Date(), "yyyy-MM-dd")}.csv`)
       link.style.visibility = "hidden"
       document.body.appendChild(link)
       link.click()
@@ -214,13 +215,13 @@ export default function UserTrackingPage() {
 
       toast({
         title: "Export Successful",
-        description: `${filteredServings.length} records exported to CSV`,
+        description: "Meal servings data has been exported to CSV",
       })
     } catch (error) {
       console.error("Error exporting to CSV:", error)
       toast({
         title: "Export Failed",
-        description: "There was an error exporting the data to CSV",
+        description: "Failed to export meal servings data",
         variant: "destructive",
       })
     }
@@ -228,151 +229,146 @@ export default function UserTrackingPage() {
 
   return (
     <div className="container mx-auto py-6">
-      <motion.div
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-        className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6"
-      >
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">User Meal Tracking</h1>
-          <p className="text-gray-500">Monitor which staff members served which meals</p>
-        </div>
-        <Button onClick={exportToCSV} className="bg-green-600 hover:bg-green-700 text-white">
-          <Download className="mr-2 h-4 w-4" /> Export to CSV
-        </Button>
-      </motion.div>
-
-      <Card className="mb-6 border-amber-200 shadow-md">
-        <CardHeader className="pb-3">
-          <CardTitle className="text-amber-700 flex items-center">
-            <Filter className="h-5 w-5 mr-2 text-amber-500" />
-            Filters
-          </CardTitle>
-          <CardDescription>Filter meal servings by staff, meal, or date range</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div className="relative">
-              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
-              <Input
-                placeholder="Search staff or meal..."
-                className="pl-8"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
-            </div>
-
-            <Select value={staffFilter} onValueChange={setStaffFilter}>
-              <SelectTrigger>
-                <Users className="h-4 w-4 mr-2 text-gray-500" />
-                <SelectValue placeholder="Filter by staff" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Staff</SelectItem>
-                {staffNames.map((name) => (
-                  <SelectItem key={name} value={name}>
-                    {name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-
-            <Select value={mealFilter} onValueChange={setMealFilter}>
-              <SelectTrigger>
-                <Utensils className="h-4 w-4 mr-2 text-gray-500" />
-                <SelectValue placeholder="Filter by meal" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Meals</SelectItem>
-                {mealNames.map((name) => (
-                  <SelectItem key={name} value={name}>
-                    {name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-
-            <DateRangePicker date={dateRange} onDateChange={setDateRange} />
+      <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900">User Meal Tracking</h1>
+            <p className="text-gray-500">Track which staff members served which meals</p>
           </div>
-        </CardContent>
-      </Card>
+          <Button onClick={exportToCSV} className="bg-green-600 hover:bg-green-700">
+            <Download className="mr-2 h-4 w-4" /> Export to CSV
+          </Button>
+        </div>
 
-      <Card className="border-amber-200 shadow-md">
-        <CardHeader>
-          <CardTitle className="text-amber-700 flex items-center">
-            <Users className="h-5 w-5 mr-2 text-amber-500" />
-            Meal Serving Records
-          </CardTitle>
-          <CardDescription>
-            Showing {filteredServings.length} of {servings.length} records
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Staff Name</TableHead>
-                <TableHead>Role</TableHead>
-                <TableHead>Meal</TableHead>
-                <TableHead>Portions</TableHead>
-                <TableHead>Date</TableHead>
-                <TableHead>Time</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredServings.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={6} className="text-center py-8 text-gray-500">
-                    No records found matching your filters
-                  </TableCell>
-                </TableRow>
-              ) : (
-                filteredServings.map((serving) => {
-                  const date = new Date(serving.timestamp)
-                  return (
-                    <TableRow key={serving.id} className="hover:bg-amber-50">
-                      <TableCell className="font-medium">{serving.staffName}</TableCell>
-                      <TableCell>
-                        <Badge
-                          variant="outline"
-                          className={
-                            serving.staffRole === "admin"
-                              ? "bg-purple-50 text-purple-700 border-purple-200"
-                              : serving.staffRole === "manager"
-                                ? "bg-blue-50 text-blue-700 border-blue-200"
-                                : "bg-green-50 text-green-700 border-green-200"
-                          }
-                        >
-                          {serving.staffRole}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>{serving.mealName}</TableCell>
-                      <TableCell>
-                        <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200">
-                          {serving.portions}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="whitespace-nowrap">
-                        <div className="flex items-center">
-                          <Calendar className="h-4 w-4 mr-2 text-gray-500" />
-                          {format(date, "MMM d, yyyy")}
+        <Card className="mb-6">
+          <CardHeader>
+            <CardTitle>Filters</CardTitle>
+            <CardDescription>Filter meal servings by staff, date, or role</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="space-y-2">
+                <label htmlFor="search" className="text-sm font-medium">
+                  Search by Staff or Meal
+                </label>
+                <div className="relative">
+                  <Search className="absolute left-2 top-2.5 h-4 w-4 text-gray-500" />
+                  <Input
+                    id="search"
+                    placeholder="Search..."
+                    className="pl-8"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                  />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <label htmlFor="date-range" className="text-sm font-medium">
+                  Date Range
+                </label>
+                <DateRangePicker id="date-range" value={dateRange} onChange={setDateRange} className="w-full" />
+              </div>
+              <div className="space-y-2">
+                <label htmlFor="role-filter" className="text-sm font-medium">
+                  Filter by Role
+                </label>
+                <Select value={roleFilter} onValueChange={setRoleFilter}>
+                  <SelectTrigger id="role-filter" className="w-full">
+                    <SelectValue placeholder="Select role" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Roles</SelectItem>
+                    <SelectItem value="admin">Admin</SelectItem>
+                    <SelectItem value="cook">Cook</SelectItem>
+                    <SelectItem value="manager">Manager</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Meal Serving Records</CardTitle>
+            <CardDescription>
+              Showing {filteredServings.length} of {mealServings.length} records
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {loading ? (
+              <div className="flex justify-center items-center h-64">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-amber-500"></div>
+              </div>
+            ) : filteredServings.length === 0 ? (
+              <div className="text-center py-12">
+                <Utensils className="mx-auto h-12 w-12 text-gray-300" />
+                <h3 className="mt-4 text-lg font-medium text-gray-900">No meal servings found</h3>
+                <p className="mt-2 text-gray-500">Try adjusting your filters or search term</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 gap-4">
+                {filteredServings.map((serving, index) => (
+                  <motion.div
+                    key={serving.id}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: index * 0.05 }}
+                    className="bg-white rounded-lg border border-gray-200 overflow-hidden shadow-sm hover:shadow-md transition-shadow"
+                  >
+                    <div className="p-5">
+                      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                        <div className="flex items-start space-x-4">
+                          <div className="bg-amber-100 p-3 rounded-full">
+                            <Utensils className="h-6 w-6 text-amber-600" />
+                          </div>
+                          <div>
+                            <h3 className="text-lg font-semibold text-gray-900">{serving.meal.name}</h3>
+                            <div className="flex items-center mt-1 text-gray-500">
+                              <User className="h-4 w-4 mr-1" />
+                              <span className="font-medium text-gray-700">{serving.user.name}</span>
+                              <span className="mx-2">•</span>
+                              <Badge
+                                className={`${
+                                  serving.user.role === "admin"
+                                    ? "bg-purple-100 text-purple-800"
+                                    : serving.user.role === "cook"
+                                      ? "bg-green-100 text-green-800"
+                                      : "bg-blue-100 text-blue-800"
+                                }`}
+                              >
+                                {serving.user.role.charAt(0).toUpperCase() + serving.user.role.slice(1)}
+                              </Badge>
+                            </div>
+                          </div>
                         </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center">
-                          <Clock className="h-4 w-4 mr-2 text-gray-500" />
-                          {format(date, "h:mm a")}
+                        <div className="flex flex-col items-end">
+                          <div className="flex items-center space-x-2">
+                            <Calendar className="h-4 w-4 text-gray-500" />
+                            <span className="text-gray-700">
+                              {format(new Date(serving.serving_date), "MMMM d, yyyy")}
+                            </span>
+                          </div>
+                          <div className="flex items-center space-x-2 mt-1">
+                            <Clock className="h-4 w-4 text-gray-500" />
+                            <span className="text-gray-700">{format(new Date(serving.serving_date), "h:mm a")}</span>
+                          </div>
                         </div>
-                      </TableCell>
-                    </TableRow>
-                  )
-                })
-              )}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
+                      </div>
+                      <div className="mt-4 flex justify-between items-center">
+                        <div className="bg-amber-50 px-3 py-1 rounded-full">
+                          <span className="text-amber-800 font-medium">{serving.portions} portions served</span>
+                        </div>
+                        <div className="text-gray-500 text-sm">ID: #{serving.id}</div>
+                      </div>
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </motion.div>
     </div>
   )
 }

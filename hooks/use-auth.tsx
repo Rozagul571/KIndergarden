@@ -7,7 +7,7 @@ interface User {
   id: number
   name: string
   email: string
-  role: "admin" | "cook" | "manager" | "pending"
+  role: "admin" | "cook" | "manager"
 }
 
 interface AuthContextType {
@@ -20,42 +20,49 @@ interface AuthContextType {
   checkPermission: (requiredRole: string | string[]) => boolean
 }
 
-// Sample users for demonstration
+// Sample users with Uzbek names
 const sampleUsers = [
   {
     id: 1,
-    name: "Admin User",
+    name: "Rozagul Nodirbekova",
     email: "admin@example.com",
-    password: "password123",
+    password: "Rozagul",
     role: "admin",
   },
   {
     id: 2,
-    name: "Chef User",
-    email: "chef@example.com",
-    password: "password123",
+    name: "Mukhlisa Karimova",
+    email: "cook@example.com",
+    password: "Mukhlisa",
     role: "cook",
   },
   {
     id: 3,
-    name: "Chef Assistant",
-    email: "chef2@example.com",
-    password: "password123",
+    name: "Fatima Azizova",
+    email: "fatima@example.com",
+    password: "Fatima123",
     role: "cook",
   },
   {
     id: 4,
-    name: "Manager User",
+    name: "Dilshod Umarov",
     email: "manager@example.com",
-    password: "password123",
+    password: "Dilshod123",
     role: "manager",
   },
   {
     id: 5,
-    name: "Cook",
-    email: "cook",
-    password: "Cook123",
+    name: "Aziza Tursunova",
+    email: "aziza@example.com",
+    password: "Aziza123",
     role: "cook",
+  },
+  {
+    id: 6,
+    name: "Rustam Kamolov",
+    email: "rustam@example.com",
+    password: "Rustam123",
+    role: "manager",
   },
 ]
 
@@ -86,13 +93,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // In a real app, this would be an API call
     return new Promise<boolean>((resolve) => {
       setTimeout(() => {
-        const foundUser = sampleUsers.find((u) => u.email === email && u.password === password)
+        const foundUser = sampleUsers.find((u) => (u.email === email || u.name === email) && u.password === password)
 
         if (foundUser) {
           const { password, ...userWithoutPassword } = foundUser
           setUser(userWithoutPassword as User)
           localStorage.setItem("user", JSON.stringify(userWithoutPassword))
           setIsLoading(false)
+
+          // Redirect to dashboard after successful login
+          if (typeof window !== "undefined") {
+            window.location.href = "/dashboard"
+          }
+
           resolve(true)
         } else {
           setIsLoading(false)
@@ -121,7 +134,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           id: sampleUsers.length + 1,
           name,
           email,
-          role: role as "admin" | "cook" | "manager" | "pending",
+          role: role as "admin" | "cook" | "manager",
         }
 
         // In a real app, we would add this user to the database

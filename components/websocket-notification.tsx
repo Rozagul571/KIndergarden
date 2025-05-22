@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { useWebSocket } from "@/contexts/websocket-context"
-import { Bell, Wifi, WifiOff } from "lucide-react"
+import { Wifi, WifiOff } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
@@ -47,6 +47,36 @@ export function WebSocketNotification() {
     return <AlertCircle className="h-5 w-5 mr-2" />
   }
 
+  // Format the notification message to be more descriptive
+  const formatNotificationMessage = (message: string, type: string, user: any) => {
+    if (!user || !user.name) return message
+
+    const userName = user.name
+
+    // Create more descriptive messages based on action type
+    if (type.includes("inventory_created")) {
+      return `${userName} added a new ingredient to inventory`
+    }
+    if (type.includes("inventory_updated")) {
+      return `${userName} updated inventory item`
+    }
+    if (type.includes("meal_served")) {
+      return `${userName} served a meal`
+    }
+    if (type.includes("meal_created")) {
+      return `${userName} created a new meal`
+    }
+    if (type.includes("order_created")) {
+      return `${userName} created a new order`
+    }
+    if (type.includes("order_updated")) {
+      return `${userName} updated an order status`
+    }
+
+    // If no specific format, return the original message
+    return message
+  }
+
   // Only show for admin users
   if (user?.role !== "admin") {
     return null
@@ -84,22 +114,20 @@ export function WebSocketNotification() {
           >
             <Card className="p-5 shadow-xl border-l-4 border-amber-500 max-w-md w-full">
               <div className="flex items-start space-x-4">
-                <div className="bg-amber-100 p-3 rounded-full">
-                  <Bell className="h-6 w-6 text-amber-600" />
-                </div>
+                <div className="bg-amber-100 p-3 rounded-full">{getNotificationIcon(lastMessage.type || "")}</div>
                 <div className="flex-1">
                   <h4 className="font-bold text-lg">
                     {lastMessage.type?.charAt(0).toUpperCase() + lastMessage.type?.slice(1).replace(/_/g, " ") ||
                       "Notification"}
                   </h4>
-                  <p className="text-base text-gray-700 my-2">{lastMessage.message}</p>
+                  <p className="text-base text-gray-700 my-2">
+                    {formatNotificationMessage(lastMessage.message, lastMessage.type || "", lastMessage.user)}
+                  </p>
                   <div className="flex justify-between items-center mt-3 pt-2 border-t border-gray-200">
-                    {lastMessage.triggeredBy?.name && (
+                    {lastMessage.user?.name && (
                       <div className="flex items-center">
                         <User className="h-4 w-4 mr-2 text-amber-600" />
-                        <span className="font-medium text-amber-700">
-                          {lastMessage.triggeredBy.name} ({lastMessage.triggeredBy.role || "user"})
-                        </span>
+                        <span className="font-medium text-amber-700">{lastMessage.user.name}</span>
                       </div>
                     )}
                     <span className="text-sm text-gray-500">
