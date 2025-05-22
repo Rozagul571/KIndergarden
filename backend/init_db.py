@@ -196,29 +196,29 @@ def init_db():
     
     # Check if meal servings already exist
     if db.query(MealServing).count() == 0:
-        # Create meal servings with Uzbek staff
+        # Create meal servings with Uzbek staff and morning times
         meal_servings = [
-            # May 23, 2025 servings
+            # May 23, 2025 servings (morning times)
             MealServing(
                 meal_id=1,  # Osh (Plov)
                 portions=15,
-                serving_date=datetime(2025, 5, 23, 12, 30),
+                serving_date=datetime(2025, 5, 23, 8, 30),  # Changed to morning time
                 user_id=2  # Og'iloy
             ),
             MealServing(
                 meal_id=2,  # Lagman
                 portions=12,
-                serving_date=datetime(2025, 5, 23, 9, 15),
+                serving_date=datetime(2025, 5, 23, 7, 15),  # Changed to morning time
                 user_id=3  # Muxtasar
             ),
             MealServing(
                 meal_id=3,  # Somsa
                 portions=20,
-                serving_date=datetime(2025, 5, 23, 10, 45),
+                serving_date=datetime(2025, 5, 23, 9, 45),  # Changed to morning time
                 user_id=5  # Aziza
             ),
             
-            # Previous days
+            # Previous days (also morning times)
             MealServing(
                 meal_id=1,  # Osh (Plov)
                 portions=10,
@@ -228,43 +228,43 @@ def init_db():
             MealServing(
                 meal_id=2,  # Lagman
                 portions=15,
-                serving_date=datetime(2025, 5, 11, 12, 15),
+                serving_date=datetime(2025, 5, 11, 8, 15),
                 user_id=7  # Odina
             ),
             MealServing(
                 meal_id=3,  # Somsa
                 portions=8,
-                serving_date=datetime(2025, 5, 10, 11, 45),
+                serving_date=datetime(2025, 5, 10, 7, 45),
                 user_id=3  # Muxtasar
             ),
             MealServing(
                 meal_id=4,  # Manti
                 portions=12,
-                serving_date=datetime(2025, 5, 10, 10, 30),
+                serving_date=datetime(2025, 5, 10, 8, 30),
                 user_id=4  # Kamola
             ),
             MealServing(
                 meal_id=5,  # Shurpa
                 portions=6,
-                serving_date=datetime(2025, 5, 9, 13, 20),
+                serving_date=datetime(2025, 5, 9, 9, 20),
                 user_id=7  # Odina
             ),
             MealServing(
                 meal_id=1,  # Osh (Plov)
                 portions=14,
-                serving_date=datetime(2025, 5, 9, 9, 15),
+                serving_date=datetime(2025, 5, 9, 7, 15),
                 user_id=3  # Muxtasar
             ),
             MealServing(
                 meal_id=2,  # Lagman
                 portions=10,
-                serving_date=datetime(2025, 5, 8, 11, 30),
+                serving_date=datetime(2025, 5, 8, 8, 30),
                 user_id=1  # Surayyo
             ),
             MealServing(
                 meal_id=3,  # Somsa
                 portions=20,
-                serving_date=datetime(2025, 5, 8, 10, 0),
+                serving_date=datetime(2025, 5, 8, 7, 0),
                 user_id=7  # Odina
             ),
         ]

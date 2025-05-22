@@ -3,7 +3,7 @@
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Button } from "@/components/ui/button"
-import { AlertCircle, Package, Utensils, ShoppingCart, TrendingUp, BarChart4, Clock, Users } from "lucide-react"
+import { AlertCircle, Package, Utensils, TrendingUp, BarChart4, Clock } from "lucide-react"
 import Link from "next/link"
 import { InventorySummary } from "@/components/dashboard/inventory-summary"
 import { MealsSummary } from "@/components/dashboard/meals-summary"
@@ -32,45 +32,35 @@ export default function DashboardPage() {
   return (
     <div className="flex min-h-screen flex-col">
       <div className="flex-1 space-y-6 p-8 pt-6">
-        {/* Welcome Section */}
+        {/* Welcome Section - Removed the logo as requested */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
           className="flex flex-col md:flex-row md:items-center md:justify-between gap-4"
         >
-          <div className="flex items-center gap-4">
-            <motion.div
-              initial={{ scale: 0, rotate: -180 }}
-              animate={{ scale: 1, rotate: 0 }}
-              transition={{ type: "spring", stiffness: 260, damping: 20, delay: 0.2 }}
-              className="bg-gradient-to-br from-amber-500 to-orange-600 p-3 rounded-2xl shadow-lg"
+          <div>
+            <motion.h2
+              className="text-3xl font-bold tracking-tight text-gray-900"
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.5, delay: 0.3 }}
             >
-              <Utensils className="h-8 w-8 text-white" />
-            </motion.div>
-            <div>
-              <motion.h2
-                className="text-3xl font-bold tracking-tight text-gray-900"
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.5, delay: 0.3 }}
-              >
-                Welcome, {user?.name || "User"}
-              </motion.h2>
-              <motion.p
-                className="text-gray-500"
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.5, delay: 0.4 }}
-              >
-                {new Date().toLocaleDateString("en-US", {
-                  weekday: "long",
-                  year: "numeric",
-                  month: "long",
-                  day: "numeric",
-                })}
-              </motion.p>
-            </div>
+              Welcome, {user?.name || "User"}
+            </motion.h2>
+            <motion.p
+              className="text-gray-500"
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.5, delay: 0.4 }}
+            >
+              {new Date().toLocaleDateString("en-US", {
+                weekday: "long",
+                year: "numeric",
+                month: "long",
+                day: "numeric",
+              })}
+            </motion.p>
           </div>
           <div className="flex items-center space-x-3">
             {(user?.role === "admin" || user?.role === "manager") && (
@@ -171,70 +161,6 @@ export default function DashboardPage() {
               </div>
             </CardContent>
           </Card>
-        </motion.div>
-
-        {/* Quick Access Cards */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.4 }}
-          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6"
-        >
-          {(user?.role === "admin" || user?.role === "manager") && (
-            <Link href="/inventory" className="block">
-              <Card className="h-full border-amber-200 shadow-md hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1 bg-gradient-to-br from-amber-50 to-white">
-                <CardContent className="p-6">
-                  <div className="flex flex-col items-center text-center">
-                    <Package className="h-12 w-12 mb-4 text-amber-500" />
-                    <h3 className="text-lg font-medium text-amber-700 mb-2">Inventory</h3>
-                    <p className="text-sm text-gray-600">Manage ingredients and stock levels</p>
-                  </div>
-                </CardContent>
-              </Card>
-            </Link>
-          )}
-
-          {(user?.role === "admin" || user?.role === "cook") && (
-            <Link href="/meals" className="block">
-              <Card className="h-full border-amber-200 shadow-md hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1 bg-gradient-to-br from-amber-50 to-white">
-                <CardContent className="p-6">
-                  <div className="flex flex-col items-center text-center">
-                    <Utensils className="h-12 w-12 mb-4 text-amber-500" />
-                    <h3 className="text-lg font-medium text-amber-700 mb-2">Meals</h3>
-                    <p className="text-sm text-gray-600">Create and manage meal recipes</p>
-                  </div>
-                </CardContent>
-              </Card>
-            </Link>
-          )}
-
-          {(user?.role === "admin" || user?.role === "manager") && (
-            <Link href="/orders" className="block">
-              <Card className="h-full border-amber-200 shadow-md hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1 bg-gradient-to-br from-amber-50 to-white">
-                <CardContent className="p-6">
-                  <div className="flex flex-col items-center text-center">
-                    <ShoppingCart className="h-12 w-12 mb-4 text-amber-500" />
-                    <h3 className="text-lg font-medium text-amber-700 mb-2">Orders</h3>
-                    <p className="text-sm text-gray-600">Track and manage ingredient orders</p>
-                  </div>
-                </CardContent>
-              </Card>
-            </Link>
-          )}
-
-          {(user?.role === "admin" || user?.role === "manager") && (
-            <Link href="/tracking" className="block">
-              <Card className="h-full border-amber-200 shadow-md hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1 bg-gradient-to-br from-amber-50 to-white">
-                <CardContent className="p-6">
-                  <div className="flex flex-col items-center text-center">
-                    <Users className="h-12 w-12 mb-4 text-amber-500" />
-                    <h3 className="text-lg font-medium text-amber-700 mb-2">User Tracking</h3>
-                    <p className="text-sm text-gray-600">Monitor meal serving by staff</p>
-                  </div>
-                </CardContent>
-              </Card>
-            </Link>
-          )}
         </motion.div>
 
         {/* Dashboard Overview Tabs */}

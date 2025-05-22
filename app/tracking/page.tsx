@@ -1,7 +1,6 @@
 "use client"
 
 import { Badge } from "@/components/ui/badge"
-
 import { useState, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -47,27 +46,27 @@ export default function TrackingPage() {
     const fetchMealServings = async () => {
       try {
         // In a real app, this would be an API call
-        // For now, we'll use mock data
+        // For now, we'll use mock data with Uzbek names
         const mockData: MealServing[] = [
           {
             id: 1,
             meal: { id: 1, name: "Osh (Plov)" },
             portions: 15,
-            serving_date: "2025-05-23T12:30:00",
+            serving_date: "2025-05-23T08:30:00", // Changed to morning time
             user: { id: 2, name: "Og'iloy Tursunova", role: "cook" },
           },
           {
             id: 2,
             meal: { id: 2, name: "Lagman" },
             portions: 12,
-            serving_date: "2025-05-23T09:15:00",
+            serving_date: "2025-05-23T07:15:00", // Changed to morning time
             user: { id: 3, name: "Muxtasar Azizova", role: "cook" },
           },
           {
             id: 3,
             meal: { id: 3, name: "Somsa" },
             portions: 20,
-            serving_date: "2025-05-23T10:45:00",
+            serving_date: "2025-05-23T09:45:00", // Changed to morning time
             user: { id: 5, name: "Aziza Rahimova", role: "cook" },
           },
           {
@@ -81,50 +80,57 @@ export default function TrackingPage() {
             id: 5,
             meal: { id: 2, name: "Lagman" },
             portions: 15,
-            serving_date: "2025-05-11T12:15:00",
+            serving_date: "2025-05-11T08:15:00",
             user: { id: 7, name: "Odina Rustamova", role: "cook" },
           },
           {
             id: 6,
             meal: { id: 3, name: "Somsa" },
             portions: 8,
-            serving_date: "2025-05-10T11:45:00",
+            serving_date: "2025-05-10T07:45:00",
             user: { id: 3, name: "Muxtasar Azizova", role: "cook" },
           },
           {
             id: 7,
             meal: { id: 4, name: "Manti" },
             portions: 12,
-            serving_date: "2025-05-10T10:30:00",
+            serving_date: "2025-05-10T08:30:00",
             user: { id: 4, name: "Kamola Umarova", role: "manager" },
           },
           {
             id: 8,
             meal: { id: 5, name: "Shurpa" },
             portions: 6,
-            serving_date: "2025-05-09T13:20:00",
+            serving_date: "2025-05-09T09:20:00",
             user: { id: 7, name: "Odina Rustamova", role: "cook" },
           },
           {
             id: 9,
             meal: { id: 1, name: "Osh (Plov)" },
             portions: 14,
-            serving_date: "2025-05-09T09:15:00",
+            serving_date: "2025-05-09T07:15:00",
             user: { id: 3, name: "Muxtasar Azizova", role: "cook" },
           },
           {
             id: 10,
             meal: { id: 2, name: "Lagman" },
             portions: 10,
-            serving_date: "2025-05-08T11:30:00",
+            serving_date: "2025-05-08T08:30:00",
             user: { id: 1, name: "Surayyo Karimova", role: "admin" },
           },
           {
             id: 11,
             meal: { id: 3, name: "Somsa" },
             portions: 20,
-            serving_date: "2025-05-08T10:00:00",
+            serving_date: "2025-05-08T07:00:00",
             user: { id: 7, name: "Odina Rustamova", role: "cook" },
+          },
+          {
+            id: 12,
+            meal: { id: 4, name: "Manti" },
+            portions: 8,
+            serving_date: "2025-05-07T09:15:00",
+            user: { id: 8, name: "Tanzila Nodirbekova", role: "cook" },
           },
         ]
 
