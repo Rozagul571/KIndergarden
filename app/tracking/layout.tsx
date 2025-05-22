@@ -1,7 +1,7 @@
 import type React from "react"
 import { ProtectedRoute } from "@/components/protected-route"
 
-export default function ReportsLayout({
+export default function TrackingLayout({
   children,
 }: {
   children: React.ReactNode

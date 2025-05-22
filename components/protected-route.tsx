@@ -10,14 +10,17 @@ interface ProtectedRouteProps {
 }
 
 export function ProtectedRoute({ children, requiredRole }: ProtectedRouteProps) {
-  const { isAuthenticated, isLoading, checkPermission } = useAuth()
+  const { isAuthenticated, isLoading, checkPermission, user } = useAuth()
   const router = useRouter()
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
       router.push("/auth")
-    } else if (!isLoading && isAuthenticated && requiredRole && !checkPermission(requiredRole)) {
-      router.push("/unauthorized")
+    } else if (!isLoading && isAuthenticated && requiredRole) {
+      const hasPermission = checkPermission(requiredRole)
+      if (!hasPermission) {
+        router.push("/unauthorized")
+      }
     }
   }, [isLoading, isAuthenticated, router, requiredRole, checkPermission])
 

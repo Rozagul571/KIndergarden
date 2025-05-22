@@ -7,14 +7,14 @@ interface User {
   id: number
   name: string
   email: string
-  role: "admin" | "cook" | "manager"
+  role: "admin" | "cook" | "manager" | "pending"
 }
 
 interface AuthContextType {
   user: User | null
   isAuthenticated: boolean
   isLoading: boolean
-  login: (email: string, password: string) => Promise<void>
+  login: (email: string, password: string) => Promise<boolean>
   register: (name: string, email: string, password: string, role: string) => Promise<void>
   logout: () => void
   checkPermission: (requiredRole: string | string[]) => boolean
@@ -24,31 +24,38 @@ interface AuthContextType {
 const sampleUsers = [
   {
     id: 1,
-    name: "John Smith",
+    name: "Admin User",
     email: "admin@example.com",
     password: "password123",
     role: "admin",
   },
   {
     id: 2,
-    name: "Maria Garcia",
-    email: "cook@example.com",
+    name: "Chef User",
+    email: "chef@example.com",
     password: "password123",
     role: "cook",
   },
   {
     id: 3,
-    name: "David Lee",
-    email: "cook2@example.com",
+    name: "Chef Assistant",
+    email: "chef2@example.com",
     password: "password123",
     role: "cook",
   },
   {
     id: 4,
-    name: "Sarah Johnson",
+    name: "Manager User",
     email: "manager@example.com",
     password: "password123",
     role: "manager",
+  },
+  {
+    id: 5,
+    name: "Cook",
+    email: "cook",
+    password: "Cook123",
+    role: "cook",
   },
 ]
 
@@ -63,16 +70,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const storedUser = localStorage.getItem("user")
     if (storedUser) {
-      setUser(JSON.parse(storedUser))
+      try {
+        setUser(JSON.parse(storedUser))
+      } catch (error) {
+        console.error("Failed to parse user from localStorage:", error)
+        localStorage.removeItem("user")
+      }
     }
     setIsLoading(false)
   }, [])
 
-  const login = async (email: string, password: string) => {
+  const login = async (email: string, password: string): Promise<boolean> => {
     setIsLoading(true)
 
     // In a real app, this would be an API call
-    return new Promise<void>((resolve, reject) => {
+    return new Promise<boolean>((resolve) => {
       setTimeout(() => {
         const foundUser = sampleUsers.find((u) => u.email === email && u.password === password)
 
@@ -81,10 +93,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setUser(userWithoutPassword as User)
           localStorage.setItem("user", JSON.stringify(userWithoutPassword))
           setIsLoading(false)
-          resolve()
+          resolve(true)
         } else {
           setIsLoading(false)
-          reject(new Error("Invalid credentials"))
+          resolve(false)
         }
       }, 1000) // Simulate API delay
     })
@@ -109,11 +121,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           id: sampleUsers.length + 1,
           name,
           email,
-          role: role as "admin" | "cook" | "manager",
+          role: role as "admin" | "cook" | "manager" | "pending",
         }
 
-        setUser(newUser)
-        localStorage.setItem("user", JSON.stringify(newUser))
+        // In a real app, we would add this user to the database
+        // For now, we'll just simulate a successful registration
         setIsLoading(false)
         resolve()
       }, 1000) // Simulate API delay
@@ -129,11 +141,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const checkPermission = (requiredRole: string | string[]) => {
     if (!user) return false
 
+    if (user.role === "admin") return true // Admin has access to everything
+
     if (Array.isArray(requiredRole)) {
       return requiredRole.includes(user.role)
     }
 
-    return user.role === requiredRole || user.role === "admin"
+    return user.role === requiredRole
   }
 
   return (

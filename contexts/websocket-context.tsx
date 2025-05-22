@@ -1,29 +1,75 @@
 "use client"
 
-import { createContext, useContext, useEffect, useState, useCallback, type ReactNode } from "react"
+import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from "react"
 import { useToast } from "@/hooks/use-toast"
+import { useAuth } from "@/hooks/use-auth"
 
 interface WebSocketContextType {
   connected: boolean
   sendMessage: (message: any) => void
   lastMessage: any | null
   connectionType: "real" | "mock"
+  notifications: Notification[]
+  markAsRead: (id: number | string) => void
+  markAllAsRead: () => void
+  deleteNotification: (id: number | string) => void
+}
+
+interface Notification {
+  id: number | string
+  type: string
+  message: string
+  timestamp: string
+  read: boolean
+  triggeredBy?: {
+    id?: number
+    name?: string
+    role?: string
+  }
+  user?: {
+    id?: number
+    name?: string
+    role?: string
+  }
 }
 
 const WebSocketContext = createContext<WebSocketContextType | undefined>(undefined)
 
 export function WebSocketProvider({
   children,
-  url,
+  url = "ws://localhost:8000/ws",
 }: {
   children: ReactNode
-  url: string
+  url?: string
 }) {
   const [socket, setSocket] = useState<WebSocket | null>(null)
   const [connected, setConnected] = useState(false)
   const [lastMessage, setLastMessage] = useState<any | null>(null)
   const [connectionType, setConnectionType] = useState<"real" | "mock">("mock")
+  const [notifications, setNotifications] = useState<Notification[]>([])
   const { toast } = useToast()
+  const { user } = useAuth()
+
+  // Load saved notifications from localStorage on initial render
+  useEffect(() => {
+    try {
+      const savedNotifications = localStorage.getItem("notifications")
+      if (savedNotifications) {
+        setNotifications(JSON.parse(savedNotifications))
+      }
+    } catch (error) {
+      console.error("Error loading saved notifications:", error)
+    }
+  }, [])
+
+  // Save notifications to localStorage when they change
+  useEffect(() => {
+    try {
+      localStorage.setItem("notifications", JSON.stringify(notifications))
+    } catch (error) {
+      console.error("Error saving notifications:", error)
+    }
+  }, [notifications])
 
   // Initialize WebSocket connection
   useEffect(() => {
@@ -58,16 +104,7 @@ export function WebSocketProvider({
             ws.onmessage = (event) => {
               try {
                 const data = JSON.parse(event.data)
-                setLastMessage(data)
-
-                // Show toast notification for important events
-                if (data.type && data.message) {
-                  toast({
-                    title: data.type.charAt(0).toUpperCase() + data.type.slice(1),
-                    description: data.message,
-                    variant: data.type === "error" ? "destructive" : "default",
-                  })
-                }
+                processMessage(data)
               } catch (e) {
                 console.error("Failed to parse WebSocket message:", e)
               }
@@ -118,31 +155,94 @@ export function WebSocketProvider({
         }
       }
     }
-  }, [url, toast])
+  }, [url])
+
+  // Process incoming messages
+  const processMessage = useCallback(
+    (data: any) => {
+      // Skip system login messages
+      if (data.type === "system" && data.message?.includes("logged in")) {
+        return
+      }
+
+      // Set as last message
+      setLastMessage(data)
+
+      // Create notification from message
+      const notification: Notification = {
+        id: data.id || Date.now(),
+        type: data.type || "notification",
+        message: data.message || "New notification",
+        timestamp: data.timestamp || new Date().toISOString(),
+        read: false,
+        triggeredBy: data.user || { name: data.userName || "System" },
+        user: data.user || { name: data.userName || "System" },
+      }
+
+      // Add to notifications - only for admin users
+      if (user?.role === "admin") {
+        setNotifications((prev) => {
+          // Check if notification with this ID already exists
+          const exists = prev.some((n) => n.id === notification.id)
+          if (exists) return prev
+          return [notification, ...prev]
+        })
+
+        // Show toast notification for important events
+        toast({
+          title: notification.type.charAt(0).toUpperCase() + notification.type.slice(1).replace(/_/g, " "),
+          description: notification.message,
+          variant: notification.type.includes("error") ? "destructive" : "default",
+        })
+      }
+    },
+    [toast, user?.role],
+  )
 
   // Function to send messages through WebSocket
   const sendMessage = useCallback(
     (message: any) => {
+      // Skip system login messages
+      if (message.type === "system" && message.message?.includes("logged in")) {
+        return
+      }
+
+      // Add user information if not present
+      const messageWithUser = {
+        ...message,
+        user: message.user || {
+          id: user?.id,
+          name: user?.name || "Current User",
+          role: user?.role || "user",
+        },
+        timestamp: message.timestamp || new Date().toISOString(),
+      }
+
       if (socket && connected && connectionType === "real") {
         try {
-          socket.send(JSON.stringify(message))
+          socket.send(JSON.stringify(messageWithUser))
         } catch (error) {
           console.error("Error sending WebSocket message:", error)
           // Fall back to mock mode on error
           setConnectionType("mock")
-          handleMockMessage(message)
+          handleMockMessage(messageWithUser)
         }
       } else {
         // Mock implementation for sending messages
-        handleMockMessage(message)
+        handleMockMessage(messageWithUser)
       }
     },
-    [socket, connected, connectionType],
+    [socket, connected, connectionType, user],
   )
 
   // Handle mock messages
   const handleMockMessage = useCallback(
     (message: any) => {
+      // Skip system login messages
+      if (message.type === "system" && message.message?.includes("logged in")) {
+        return
+      }
+
       console.log("Mock WebSocket - Message sent:", message)
 
       // Format the message object if it's a string
@@ -166,10 +266,19 @@ export function WebSocketProvider({
         case "meal_served":
           notificationMessage = `${userName} served ${msgObj.data?.portions || ""} portions of ${msgObj.data?.mealName || "a meal"}`
           break
+        case "meal_created":
+          notificationMessage = `${userName} created a new meal: ${msgObj.data?.name || ""}`
+          break
+        case "meal_updated":
+          notificationMessage = `${userName} updated meal: ${msgObj.data?.name || ""}`
+          break
+        case "meal_deleted":
+          notificationMessage = `${userName} deleted meal with ID: ${msgObj.data?.id || ""}`
+          break
         case "order_created":
           notificationMessage = `${userName} created an order for ${msgObj.data?.quantity || ""} ${msgObj.data?.unit || ""} of ${msgObj.data?.ingredientName || "an ingredient"}`
           break
-        case "order_status":
+        case "order_status_update":
           notificationMessage = `${userName} ${msgObj.data?.status?.toLowerCase() || "updated"} order #${msgObj.data?.id || ""} for ${msgObj.data?.ingredientName || "an ingredient"}`
           break
         default:
@@ -182,27 +291,55 @@ export function WebSocketProvider({
         type: notificationType,
         message: notificationMessage,
         timestamp: timestamp,
-        user: msgObj.user || { name: userName },
         read: false,
+        triggeredBy: {
+          id: msgObj.user?.id,
+          name: userName,
+          role: msgObj.user?.role || "user",
+        },
+        user: {
+          id: msgObj.user?.id,
+          name: userName,
+          role: msgObj.user?.role || "user",
+        },
       }
 
-      // Update last message state
-      setLastMessage(mockResponse)
-
-      // Show toast for mock responses
-      toast({
-        title: mockResponse.type.charAt(0).toUpperCase() + mockResponse.type.slice(1),
-        description: mockResponse.message,
-      })
-
-      // In a real implementation, this would save to the database
-      console.log("Notification saved to database:", mockResponse)
+      // Process the mock message
+      processMessage(mockResponse)
     },
-    [toast],
+    [processMessage],
   )
 
+  // Mark notification as read
+  const markAsRead = useCallback((id: number | string) => {
+    setNotifications((prev) =>
+      prev.map((notification) => (notification.id === id ? { ...notification, read: true } : notification)),
+    )
+  }, [])
+
+  // Mark all notifications as read
+  const markAllAsRead = useCallback(() => {
+    setNotifications((prev) => prev.map((notification) => ({ ...notification, read: true })))
+  }, [])
+
+  // Delete notification
+  const deleteNotification = useCallback((id: number | string) => {
+    setNotifications((prev) => prev.filter((notification) => notification.id !== id))
+  }, [])
+
   return (
-    <WebSocketContext.Provider value={{ connected, sendMessage, lastMessage, connectionType }}>
+    <WebSocketContext.Provider
+      value={{
+        connected,
+        sendMessage,
+        lastMessage,
+        connectionType,
+        notifications,
+        markAsRead,
+        markAllAsRead,
+        deleteNotification,
+      }}
+    >
       {children}
     </WebSocketContext.Provider>
   )

@@ -37,19 +37,30 @@ export default function AuthPage() {
 
   useEffect(() => {
     setMounted(true)
-  }, [])
+
+    // Check if user is already logged in
+    const user = localStorage.getItem("user")
+    if (user) {
+      router.push("/dashboard")
+    }
+  }, [router])
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
 
     try {
-      await login(loginData.email, loginData.password)
-      toast({
-        title: "Login successful",
-        description: "Welcome back to KinderChef!",
-      })
-      router.push("/dashboard")
+      const success = await login(loginData.email, loginData.password)
+      if (success) {
+        toast({
+          title: "Login successful",
+          description: "Welcome back to KinderChef!",
+        })
+        // Force redirect to dashboard
+        window.location.href = "/dashboard"
+      } else {
+        throw new Error("Invalid credentials")
+      }
     } catch (error) {
       toast({
         title: "Login failed",

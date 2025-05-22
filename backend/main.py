@@ -1403,12 +1403,13 @@ async def root():
 # Include routers
 from .database import engine, Base
 from .models.models import *
-from .routers import auth, users, ingredients
+from .routers import auth, users, ingredients, notifications
 from .websocket import manager
 
 app.include_router(auth.router)
 app.include_router(users.router)
 app.include_router(ingredients.router)
+app.include_router(notifications.router)
 
 # Main entry point
 if __name__ == "__main__":

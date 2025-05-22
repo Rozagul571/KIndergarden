@@ -1,10 +1,9 @@
-from fastapi import WebSocket, WebSocketDisconnect, Depends
+from fastapi import WebSocket, WebSocketDisconnect
 from typing import List, Dict, Any
-from sqlalchemy.orm import Session
-from datetime import datetime
 import json
-import asyncio
-from .database import get_db
+from datetime import datetime
+from sqlalchemy.orm import Session
+from .database import SessionLocal
 from .models.models import Notification, User
 
 class ConnectionManager:
@@ -16,7 +15,7 @@ class ConnectionManager:
         await websocket.accept()
         self.active_connections.append(websocket)
         
-        # If user_id is provided, associate this connection with the user
+        # If user_id is provided, add to user_connections
         if user_id:
             if user_id not in self.user_connections:
                 self.user_connections[user_id] = []
@@ -26,112 +25,70 @@ class ConnectionManager:
         if websocket in self.active_connections:
             self.active_connections.remove(websocket)
         
-        # Remove from user connections if applicable
+        # Remove from user_connections if applicable
         if user_id and user_id in self.user_connections:
             if websocket in self.user_connections[user_id]:
                 self.user_connections[user_id].remove(websocket)
             
-            # Clean up empty user entries
+            # Clean up empty lists
             if not self.user_connections[user_id]:
                 del self.user_connections[user_id]
 
     async def send_personal_message(self, message: str, websocket: WebSocket):
-        try:
-            await websocket.send_text(message)
-        except Exception as e:
-            print(f"Error sending personal message: {e}")
-            # Connection might be closed, remove it
-            if websocket in self.active_connections:
-                self.active_connections.remove(websocket)
+        await websocket.send_text(message)
 
     async def send_to_user(self, message: str, user_id: int):
-        """Send a message to all connections of a specific user"""
+        """Send a message to a specific user via all their connections."""
         if user_id in self.user_connections:
-            disconnected = []
-            for websocket in self.user_connections[user_id]:
-                try:
-                    await websocket.send_text(message)
-                except Exception as e:
-                    print(f"Error sending to user {user_id}: {e}")
-                    disconnected.append(websocket)
-            
-            # Clean up disconnected websockets
-            for ws in disconnected:
-                self.disconnect(ws, user_id)
+            for connection in self.user_connections[user_id]:
+                await connection.send_text(message)
 
-    async def broadcast(self, message: str):
-        """Send a message to all connected clients"""
-        disconnected = []
-        for websocket in self.active_connections:
+    async def broadcast(self, message: str, save_to_db: bool = True):
+        """
+        Broadcast a message to all connected clients.
+        Optionally save the message to the database.
+        """
+        # Send to all active connections
+        for connection in self.active_connections:
             try:
-                await websocket.send_text(message)
+                await connection.send_text(message)
             except Exception as e:
-                print(f"Error broadcasting message: {e}")
-                disconnected.append(websocket)
+                print(f"Error sending message: {e}")
         
-        # Clean up disconnected websockets
-        for ws in disconnected:
-            if ws in self.active_connections:
-                self.active_connections.remove(ws)
-
-    async def save_notification(self, message_data: Dict[str, Any], db: Session):
-        """Save a notification to the database"""
-        try:
-            # Extract data from the message
-            message_type = message_data.get("type", "system")
-            message_content = message_data.get("message", "")
-            user_id = message_data.get("user_id")
-            
-            # Create notification record
-            notification = Notification(
-                user_id=user_id,
-                message=message_content,
-                notification_type=message_type,
-                is_read=False,
-                created_at=datetime.utcnow()
-            )
-            
-            db.add(notification)
-            db.commit()
-            
-            # Return the created notification ID
-            return notification.id
-        except Exception as e:
-            db.rollback()
-            print(f"Error saving notification: {e}")
-            return None
-
-    async def broadcast_and_save(self, message: Dict[str, Any], db: Session):
-        """Broadcast a message to all clients and save it to the database"""
-        # Add timestamp if not present
-        if "timestamp" not in message:
-            message["timestamp"] = datetime.utcnow().isoformat()
-        
-        # Save to database
-        notification_id = await self.save_notification(message, db)
-        if notification_id:
-            message["id"] = notification_id
-        
-        # Broadcast to all clients
-        await self.broadcast(json.dumps(message))
-
-# Create a global connection manager
-manager = ConnectionManager()
-
-# WebSocket endpoint
-async def websocket_endpoint(websocket: WebSocket, user_id: int = None, db: Session = Depends(get_db)):
-    await manager.connect(websocket, user_id)
-    try:
-        while True:
-            data = await websocket.receive_text()
+        # Save to database if requested
+        if save_to_db:
             try:
-                message_data = json.loads(data)
+                # Parse the message
+                data = json.loads(message)
                 
-                # Save the message to the database and broadcast
-                await manager.broadcast_and_save(message_data, db)
-                
-            except json.JSONDecodeError:
-                # If not valid JSON, just broadcast as is
-                await manager.broadcast(data)
-    except WebSocketDisconnect:
-        manager.disconnect(websocket, user_id)
+                # Create a database session
+                db = SessionLocal()
+                try:
+                    # Determine user_id (if any)
+                    user_id = data.get('data', {}).get('user_id')
+                    
+                    # Get the sender information
+                    sender_id = None
+                    sender_name = "System"
+                    if 'user' in data:
+                        sender_id = data['user'].get('id')
+                        sender_name = data['user'].get('name', 'System')
+                    
+                    # Create notification
+                    notification = Notification(
+                        user_id=user_id,  # Can be None for broadcast to all
+                        message=data.get('message', 'New notification'),
+                        notification_type=data.get('type', 'system'),
+                        is_read=False,
+                        created_by=sender_id,
+                        created_at=datetime.utcnow()
+                    )
+                    
+                    db.add(notification)
+                    db.commit()
+                finally:
+                    db.close()
+            except Exception as e:
+                print(f"Error saving notification to database: {e}")
+
+manager = ConnectionManager()

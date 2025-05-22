@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -21,6 +21,8 @@ import type { Meal, MealIngredient } from "@/types/meals"
 import type { InventoryItem } from "@/types/inventory"
 import Link from "next/link"
 import { motion } from "framer-motion"
+import { useWebSocket } from "@/contexts/websocket-context"
+import { useToast } from "@/hooks/use-toast"
 
 // Sample data for demonstration
 const initialInventory: InventoryItem[] = [
@@ -192,6 +194,15 @@ export default function MealsPage() {
     unit: "g",
   })
 
+  const { toast } = useToast()
+  const { sendMessage } = useWebSocket()
+
+  useEffect(() => {
+    if (sendMessage) {
+      sendMessage(JSON.stringify({ type: "meals_page_viewed" }))
+    }
+  }, [sendMessage])
+
   const calculatePossiblePortions = (meal: Meal): number => {
     if (!meal.ingredients.length) return 0
 
@@ -226,6 +237,11 @@ export default function MealsPage() {
       imageUrl: "/placeholder.svg?height=100&width=100",
     })
     setIsAddDialogOpen(false)
+
+    toast({
+      title: "Meal Added",
+      description: "The meal has been successfully added.",
+    })
   }
 
   const handleAddIngredientToMeal = () => {
@@ -262,10 +278,20 @@ export default function MealsPage() {
     setMeals(updatedMeals)
     setSelectedMeal(null)
     setIsEditDialogOpen(false)
+
+    toast({
+      title: "Meal Updated",
+      description: "The meal has been successfully updated.",
+    })
   }
 
   const handleDeleteMeal = (id: number) => {
     setMeals(meals.filter((meal) => meal.id !== id))
+
+    toast({
+      title: "Meal Deleted",
+      description: "The meal has been successfully deleted.",
+    })
   }
 
   const handleRemoveIngredientFromMeal = (index: number) => {

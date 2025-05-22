@@ -1,11 +1,11 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { Card, CardContent } from "@/components/ui/card"
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import { Badge } from "@/components/ui/badge"
+import { Check, Plus, Minus } from "lucide-react"
 import {
   Dialog,
   DialogContent,
@@ -14,16 +14,12 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import { Badge } from "@/components/ui/badge"
-import { AlertCircle, Check } from "lucide-react"
 import type { Meal, MealIngredient, MealServing } from "@/types/meals"
 import type { InventoryItem } from "@/types/inventory"
-import type { User } from "@/types/users"
-import { Toaster } from "@/components/ui/toaster"
 import { useToast } from "@/hooks/use-toast"
 import { motion } from "framer-motion"
-import { ChefLogo } from "@/components/chef-logo"
+import { useWebSocket } from "@/contexts/websocket-context"
+import { useAuth } from "@/hooks/use-auth"
 
 // Sample data for demonstration
 const initialInventory: InventoryItem[] = [
@@ -175,20 +171,13 @@ const initialMeals: Meal[] = [
   },
 ]
 
-const initialUsers: User[] = [
-  { id: 1, name: "John Smith", role: "admin" },
-  { id: 2, name: "Maria Garcia", role: "cook" },
-  { id: 3, name: "David Lee", role: "cook" },
-  { id: 4, name: "Sarah Johnson", role: "manager" },
-]
-
 const initialServings: MealServing[] = [
   {
     id: 1,
     mealId: 1,
     mealName: "Osh (Plov)",
     portions: 10,
-    servedBy: "Maria Garcia",
+    servedBy: "Malika Umarova",
     servedAt: "2025-05-11T09:30:00",
     userId: 2,
   },
@@ -197,7 +186,7 @@ const initialServings: MealServing[] = [
     mealId: 2,
     mealName: "Lagman",
     portions: 15,
-    servedBy: "David Lee",
+    servedBy: "Dilnoza Rakhimova",
     servedAt: "2025-05-11T12:15:00",
     userId: 3,
   },
@@ -206,7 +195,7 @@ const initialServings: MealServing[] = [
     mealId: 3,
     mealName: "Somsa",
     portions: 8,
-    servedBy: "Maria Garcia",
+    servedBy: "Malika Umarova",
     servedAt: "2025-05-10T11:45:00",
     userId: 2,
   },
@@ -215,29 +204,16 @@ const initialServings: MealServing[] = [
 export default function ServeMealsPage() {
   const [inventory, setInventory] = useState<InventoryItem[]>(initialInventory)
   const [meals] = useState<Meal[]>(initialMeals)
-  const [users] = useState<User[]>(initialUsers)
   const [servings, setServings] = useState<MealServing[]>(initialServings)
   const [selectedMeal, setSelectedMeal] = useState<Meal | null>(null)
   const [portions, setPortions] = useState<number>(1)
-  const [selectedUserId, setSelectedUserId] = useState<number>(0)
   const [isServeDialogOpen, setIsServeDialogOpen] = useState(false)
   const [isConfirmDialogOpen, setIsConfirmDialogOpen] = useState(false)
   const [insufficientIngredients, setInsufficientIngredients] = useState<MealIngredient[]>([])
   const [servingSuccess, setServingSuccess] = useState(false)
   const { toast } = useToast()
-
-  // Simulate WebSocket connection for real-time updates
-  useEffect(() => {
-    if (servingSuccess) {
-      // In a real app, this would be sent via WebSocket
-      const notificationMessage = `${users.find((u) => u.id === selectedUserId)?.name} served ${portions} portions of ${selectedMeal?.name} at ${new Date().toLocaleTimeString()}`
-
-      toast({
-        title: "Meal Served",
-        description: notificationMessage,
-      })
-    }
-  }, [servingSuccess, selectedMeal, portions, selectedUserId, users, toast])
+  const { sendMessage } = useWebSocket()
+  const { user } = useAuth()
 
   const calculatePossiblePortions = (meal: Meal): number => {
     if (!meal.ingredients.length) return 0
@@ -268,7 +244,7 @@ export default function ServeMealsPage() {
   }
 
   const handleServeMeal = () => {
-    if (!selectedMeal || !portions || !selectedUserId) return
+    if (!selectedMeal || !portions) return
 
     const insufficient = checkIngredientsAvailability(selectedMeal, portions)
 
@@ -281,7 +257,7 @@ export default function ServeMealsPage() {
   }
 
   const confirmServeMeal = () => {
-    if (!selectedMeal || !portions || !selectedUserId) return
+    if (!selectedMeal || !portions || !user) return
 
     // Deduct ingredients from inventory
     const updatedInventory = [...inventory]
@@ -309,9 +285,6 @@ export default function ServeMealsPage() {
     })
 
     // Add serving record
-    const user = users.find((u) => u.id === selectedUserId)
-    if (!user) return
-
     const newServing: MealServing = {
       id: Math.max(0, ...servings.map((s) => s.id)) + 1,
       mealId: selectedMeal.id,
@@ -328,19 +301,38 @@ export default function ServeMealsPage() {
     setIsServeDialogOpen(false)
     setServingSuccess(true)
 
+    // Send notification via WebSocket
+    sendMessage({
+      type: "meal_served",
+      message: `${user.name} served ${portions} portions of ${selectedMeal.name}`,
+      user: { name: user.name, role: user.role },
+      data: {
+        mealId: selectedMeal.id,
+        mealName: selectedMeal.name,
+        portions: portions,
+        servedBy: user.name,
+        servedAt: new Date().toISOString(),
+      },
+      timestamp: new Date().toISOString(),
+    })
+
+    // Show toast notification
+    toast({
+      title: "Meal Served",
+      description: `${portions} portions of ${selectedMeal.name} served successfully`,
+    })
+
     // Reset form
     setTimeout(() => {
       setServingSuccess(false)
       setSelectedMeal(null)
       setPortions(1)
-      setSelectedUserId(0)
     }, 3000)
   }
 
   const startServeMeal = (meal: Meal) => {
     setSelectedMeal(meal)
     setPortions(1)
-    setSelectedUserId(0)
     setInsufficientIngredients([])
     setIsServeDialogOpen(true)
   }
@@ -420,9 +412,9 @@ export default function ServeMealsPage() {
                   <Button
                     className="w-full bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white shadow-md hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1"
                     onClick={() => startServeMeal(meal)}
-                    disabled={possiblePortions === 0}
+                    disabled={possiblePortions <= 0}
                   >
-                    <ChefLogo className="mr-2 h-4 w-4" /> Serve Meal
+                    Serve Meal
                   </Button>
                 </CardContent>
               </Card>
@@ -431,127 +423,108 @@ export default function ServeMealsPage() {
         })}
       </motion.div>
 
-      <Card className="border-amber-200 shadow-lg">
-        <CardHeader>
-          <CardTitle className="text-amber-700">Recent Meal Servings</CardTitle>
-          <CardDescription>History of meals served recently.</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Meal</TableHead>
-                <TableHead>Portions</TableHead>
-                <TableHead>Served By</TableHead>
-                <TableHead>Date & Time</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {servings
-                .slice()
-                .reverse()
-                .map((serving) => (
-                  <TableRow key={serving.id}>
-                    <TableCell className="font-medium">{serving.mealName}</TableCell>
-                    <TableCell>
-                      <Badge variant="outline" className="bg-amber-50 border-amber-300 text-amber-700">
-                        {serving.portions}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>{serving.servedBy}</TableCell>
-                    <TableCell>{new Date(serving.servedAt).toLocaleString()}</TableCell>
-                  </TableRow>
-                ))}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
-
       {/* Serve Meal Dialog */}
       <Dialog open={isServeDialogOpen} onOpenChange={setIsServeDialogOpen}>
-        <DialogContent className="border-amber-200">
+        <DialogContent className="sm:max-w-md border-amber-200">
           <DialogHeader>
-            <DialogTitle className="text-amber-700">Serve {selectedMeal?.name}</DialogTitle>
-            <DialogDescription>Specify how many portions to serve and who is serving the meal.</DialogDescription>
+            <DialogTitle className="text-amber-700">Serve Meal</DialogTitle>
+            <DialogDescription>
+              {selectedMeal ? `Prepare and serve ${selectedMeal.name} to children` : "Select a meal to serve"}
+            </DialogDescription>
           </DialogHeader>
-          <div className="grid gap-4 py-4">
-            {insufficientIngredients.length > 0 && (
-              <Alert variant="destructive" className="bg-red-50 border-red-200 text-red-800">
-                <AlertCircle className="h-4 w-4" />
-                <AlertTitle>Insufficient Ingredients</AlertTitle>
-                <AlertDescription>
-                  <p>You don't have enough of the following ingredients:</p>
-                  <ul className="list-disc list-inside mt-2">
-                    {insufficientIngredients.map((ingredient, index) => (
-                      <li key={index}>
-                        {ingredient.name} - Need {ingredient.quantity * portions} {ingredient.unit}
-                      </li>
-                    ))}
-                  </ul>
-                </AlertDescription>
-              </Alert>
-            )}
-
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="portions" className="text-right">
-                Portions
-              </Label>
-              <Input
-                id="portions"
-                type="number"
-                min="1"
-                value={portions}
-                onChange={(e) => {
-                  const value = Number.parseInt(e.target.value)
-                  setPortions(value > 0 ? value : 1)
-                  setInsufficientIngredients([])
-                }}
-                className="col-span-3"
-              />
-            </div>
-
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="user-select" className="text-right">
-                Served By
-              </Label>
-              <select
-                id="user-select"
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 col-span-3"
-                value={selectedUserId}
-                onChange={(e) => setSelectedUserId(Number(e.target.value))}
-              >
-                <option value={0}>Select staff member</option>
-                {users.map((user) => (
-                  <option key={user.id} value={user.id}>
-                    {user.name} ({user.role})
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label className="text-right">Maximum Possible</Label>
-              <div className="col-span-3">
-                <Badge className="bg-amber-50 border-amber-300 text-amber-700 font-bold">
-                  {selectedMeal ? calculatePossiblePortions(selectedMeal) : 0} portions
-                </Badge>
+          {selectedMeal && (
+            <div className="grid gap-4 py-4">
+              <div className="flex flex-col gap-2">
+                <h3 className="font-medium text-gray-700">Ingredients needed per portion:</h3>
+                <ul className="text-sm text-gray-600 space-y-1">
+                  {selectedMeal.ingredients.map((ingredient) => (
+                    <li key={ingredient.ingredientId} className="flex justify-between">
+                      <span>{ingredient.name}</span>
+                      <span>
+                        {ingredient.quantity} {ingredient.unit}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
               </div>
+
+              <div className="flex flex-col gap-2">
+                <h3 className="font-medium text-gray-700">Number of portions:</h3>
+                <div className="flex items-center space-x-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-8 w-8 p-0 border-amber-300"
+                    onClick={() => setPortions(Math.max(1, portions - 1))}
+                  >
+                    <Minus className="h-4 w-4" />
+                  </Button>
+                  <div className="flex-1 text-center font-bold text-xl text-amber-700">{portions}</div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-8 w-8 p-0 border-amber-300"
+                    onClick={() => setPortions(portions + 1)}
+                  >
+                    <Plus className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-2">
+                <h3 className="font-medium text-gray-700">Total ingredients needed:</h3>
+                <ul className="text-sm text-gray-600 space-y-1">
+                  {selectedMeal.ingredients.map((ingredient) => {
+                    const inventoryItem = inventory.find((item) => item.id === ingredient.ingredientId)
+                    const totalNeeded = ingredient.quantity * portions
+                    const isInsufficient = !inventoryItem || inventoryItem.quantity < totalNeeded
+
+                    return (
+                      <li
+                        key={ingredient.ingredientId}
+                        className={`flex justify-between ${isInsufficient ? "text-red-600 font-medium" : ""}`}
+                      >
+                        <span>{ingredient.name}</span>
+                        <span>
+                          {totalNeeded} {ingredient.unit}
+                          {isInsufficient &&
+                            ` (only ${inventoryItem ? inventoryItem.quantity : 0} ${ingredient.unit} available)`}
+                        </span>
+                      </li>
+                    )
+                  })}
+                </ul>
+              </div>
+
+              {insufficientIngredients.length > 0 && (
+                <Alert variant="destructive" className="mt-2">
+                  <AlertTitle>Insufficient ingredients</AlertTitle>
+                  <AlertDescription>
+                    <p>The following ingredients are not available in sufficient quantity:</p>
+                    <ul className="mt-2 list-disc list-inside">
+                      {insufficientIngredients.map((ingredient) => (
+                        <li key={ingredient.ingredientId}>
+                          {ingredient.name} - Need{" "}
+                          <span className="font-medium">
+                            {ingredient.quantity * portions} {ingredient.unit}
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  </AlertDescription>
+                </Alert>
+              )}
             </div>
-          </div>
+          )}
           <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setIsServeDialogOpen(false)}
-              className="border-amber-300 text-amber-700 hover:bg-amber-50"
-            >
+            <Button variant="outline" onClick={() => setIsServeDialogOpen(false)} className="border-amber-300">
               Cancel
             </Button>
             <Button
               onClick={handleServeMeal}
-              disabled={!portions || !selectedUserId || portions <= 0}
-              className="bg-amber-500 hover:bg-amber-600 text-white"
+              className="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white"
             >
-              Serve Meal
+              Serve {portions} {portions === 1 ? "Portion" : "Portions"}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -559,60 +532,36 @@ export default function ServeMealsPage() {
 
       {/* Confirm Dialog */}
       <Dialog open={isConfirmDialogOpen} onOpenChange={setIsConfirmDialogOpen}>
-        <DialogContent className="border-amber-200">
+        <DialogContent className="sm:max-w-md border-amber-200">
           <DialogHeader>
-            <DialogTitle className="text-amber-700">Confirm Meal Serving</DialogTitle>
+            <DialogTitle className="text-amber-700">Confirm Serving</DialogTitle>
             <DialogDescription>
-              Are you sure you want to serve {portions} portions of {selectedMeal?.name}? This will deduct the required
-              ingredients from your inventory.
+              Are you sure you want to serve {portions} {portions === 1 ? "portion" : "portions"} of{" "}
+              {selectedMeal?.name}?
             </DialogDescription>
           </DialogHeader>
           <div className="py-4">
-            <h3 className="font-medium mb-2 text-amber-700">Ingredients to be used:</h3>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Ingredient</TableHead>
-                  <TableHead>Required</TableHead>
-                  <TableHead>Available</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {selectedMeal?.ingredients.map((ingredient, index) => {
-                  const inventoryItem = inventory.find((item) => item.id === ingredient.ingredientId)
-                  const required = ingredient.quantity * portions
-
-                  return (
-                    <TableRow key={index}>
-                      <TableCell>{ingredient.name}</TableCell>
-                      <TableCell>
-                        {required} {ingredient.unit}
-                      </TableCell>
-                      <TableCell>
-                        {inventoryItem?.quantity} {ingredient.unit}
-                      </TableCell>
-                    </TableRow>
-                  )
-                })}
-              </TableBody>
-            </Table>
+            <p className="text-sm text-gray-600">
+              This will deduct the required ingredients from inventory and record the serving.
+            </p>
           </div>
           <DialogFooter>
             <Button
               variant="outline"
               onClick={() => setIsConfirmDialogOpen(false)}
-              className="border-amber-300 text-amber-700 hover:bg-amber-50"
+              className="border-amber-300 text-amber-700"
             >
               Cancel
             </Button>
-            <Button onClick={confirmServeMeal} className="bg-amber-500 hover:bg-amber-600 text-white">
+            <Button
+              onClick={confirmServeMeal}
+              className="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white"
+            >
               Confirm
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
-
-      <Toaster />
     </div>
   )
 }

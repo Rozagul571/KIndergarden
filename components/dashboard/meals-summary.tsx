@@ -4,14 +4,12 @@ import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip, Legend } from "recha
 import { motion } from "framer-motion"
 
 const data = [
-  { name: "Osh (Plov)", value: 35 },
-  { name: "Lagman", value: 25 },
-  { name: "Somsa", value: 20 },
-  { name: "Manti", value: 15 },
-  { name: "Shurpa", value: 5 },
+  { name: "Osh (Plov)", value: 35, color: "#f59e0b" },
+  { name: "Lagman", value: 25, color: "#fbbf24" },
+  { name: "Somsa", value: 20, color: "#fcd34d" },
+  { name: "Manti", value: 15, color: "#fde68a" },
+  { name: "Shurpa", value: 5, color: "#fef3c7" },
 ]
-
-const COLORS = ["#f59e0b", "#fbbf24", "#fcd34d", "#fde68a", "#fef3c7"]
 
 export function MealsSummary() {
   return (
@@ -36,11 +34,11 @@ export function MealsSummary() {
             animationBegin={300}
           >
             {data.map((entry, index) => (
-              <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} stroke="#fff" strokeWidth={2} />
+              <Cell key={`cell-${index}`} fill={entry.color} stroke="#fff" strokeWidth={2} />
             ))}
           </Pie>
           <Tooltip
-            formatter={(value) => [`${value} portions`, "Served"]}
+            formatter={(value) => [`${value} portions (${((value / 100) * 100).toFixed(0)}%)`, "Served"]}
             contentStyle={{
               backgroundColor: "white",
               borderRadius: "8px",
@@ -48,7 +46,17 @@ export function MealsSummary() {
               boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)",
             }}
           />
-          <Legend layout="vertical" verticalAlign="middle" align="right" iconType="circle" iconSize={10} />
+          <Legend
+            layout="vertical"
+            verticalAlign="middle"
+            align="right"
+            iconType="circle"
+            iconSize={10}
+            formatter={(value, entry) => {
+              const { payload } = entry as any
+              return `${value}: ${payload.value} portions`
+            }}
+          />
         </PieChart>
       </ResponsiveContainer>
     </motion.div>

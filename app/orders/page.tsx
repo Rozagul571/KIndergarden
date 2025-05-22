@@ -33,6 +33,8 @@ import { Slider } from "@/components/ui/slider"
 import { Progress } from "@/components/ui/progress"
 import { useToast } from "@/hooks/use-toast"
 import { motion, AnimatePresence } from "framer-motion"
+import { useWebSocket } from "@/contexts/websocket-context"
+import { useAuth } from "@/hooks/use-auth"
 import type { InventoryItem } from "@/types/inventory"
 import type { Order } from "@/types/orders"
 import type { User } from "@/types/users"
@@ -67,6 +69,7 @@ const initialUsers: User[] = [
   { id: 2, name: "Maria Garcia", role: "cook" },
   { id: 3, name: "David Lee", role: "cook" },
   { id: 4, name: "Sarah Johnson", role: "manager" },
+  { id: 5, name: "Cook", role: "cook" },
 ]
 
 const initialOrders: Order[] = [
@@ -132,21 +135,12 @@ const initialOrders: Order[] = [
   },
 ]
 
-// Simulating WebSocket connection
-const mockWebSocket = {
-  send: (data: any) => {
-    console.log("WebSocket data sent:", data)
-  },
-  close: () => {
-    console.log("WebSocket connection closed")
-  },
-}
-
 export default function OrdersPage() {
   const { toast } = useToast()
+  const { user } = useAuth()
+  const { sendMessage } = useWebSocket()
   const [inventory] = useState<InventoryItem[]>(initialInventory)
   const [orders, setOrders] = useState<Order[]>(initialOrders)
-  const [webSocket, setWebSocket] = useState<any>(null)
   const [orderSorting, setOrderSorting] = useState<"newest" | "oldest">("newest")
   const [isCreateOrderDialogOpen, setIsCreateOrderDialogOpen] = useState(false)
   const [isMarkDeliveredDialogOpen, setIsMarkDeliveredDialogOpen] = useState(false)
@@ -157,90 +151,14 @@ export default function OrdersPage() {
     unit: "g",
     orderDate: new Date().toISOString().split("T")[0],
     status: "Pending",
-    createdBy: 4, // Assuming current user is Sarah Johnson (Manager)
-    createdByName: "Sarah Johnson",
+    createdBy: user?.id || 4, // Default to Sarah Johnson if no user
+    createdByName: user?.name || "Sarah Johnson",
   })
   const [searchTerm, setSearchTerm] = useState("")
   const [filteredOrders, setFilteredOrders] = useState<Order[]>(orders)
   const [isInitialLoad, setIsInitialLoad] = useState(true)
   const [deliveryDate, setDeliveryDate] = useState(new Date().toISOString().split("T")[0])
   const [deliveryNotes, setDeliveryNotes] = useState("")
-
-  // Initialize WebSocket connection
-  useEffect(() => {
-    // In a real app, this would be a real WebSocket connection to your backend
-    let ws: WebSocket | null = null
-
-    try {
-      ws = new WebSocket("ws://localhost:8000/ws")
-
-      ws.onopen = () => {
-        console.log("WebSocket connection established")
-        setWebSocket(ws)
-      }
-
-      ws.onmessage = (event) => {
-        try {
-          const data = JSON.parse(event.data)
-          console.log("WebSocket message received:", data)
-
-          // Handle different types of messages
-          if (data.type === "order_status_update") {
-            // Update the order status in state
-            setOrders((prev) =>
-              prev.map((order) =>
-                order.id === data.data.id
-                  ? { ...order, status: data.data.status, deliveryDate: data.data.deliveryDate }
-                  : order,
-              ),
-            )
-
-            // Show a notification
-            toast({
-              title: "Order Status Updated",
-              description: `Order #${data.data.id} for ${data.data.ingredientName} is now ${data.data.status}`,
-            })
-          } else if (data.type === "order_created") {
-            // Add the new order to state
-            setOrders((prev) => [data.data, ...prev])
-
-            // Show a notification
-            toast({
-              title: "New Order Created",
-              description: `Order for ${data.data.quantity} ${data.data.unit} of ${data.data.ingredientName} has been created`,
-            })
-          }
-        } catch (error) {
-          console.error("Error parsing WebSocket message:", error)
-        }
-      }
-
-      ws.onerror = (error) => {
-        console.error("WebSocket error:", error)
-        // Fallback to mock WebSocket for demo
-        setWebSocket(mockWebSocket)
-      }
-
-      ws.onclose = () => {
-        console.log("WebSocket connection closed")
-      }
-    } catch (error) {
-      console.error("Error setting up WebSocket:", error)
-      // Fallback to mock WebSocket for demo
-      setWebSocket(mockWebSocket)
-    }
-
-    // Use mock WebSocket for demo if real connection fails
-    if (!ws || ws.readyState !== WebSocket.OPEN) {
-      setWebSocket(mockWebSocket)
-    }
-
-    return () => {
-      if (ws && ws.readyState === WebSocket.OPEN) {
-        ws.close()
-      }
-    }
-  }, [toast])
 
   // Update filtered orders when orders or search term changes
   useEffect(() => {
@@ -273,6 +191,17 @@ export default function OrdersPage() {
     }
   }, [isInitialLoad])
 
+  // Update newOrder when user changes
+  useEffect(() => {
+    if (user) {
+      setNewOrder((prev) => ({
+        ...prev,
+        createdBy: user.id,
+        createdByName: user.name,
+      }))
+    }
+  }, [user])
+
   const handleCreateOrder = () => {
     if (!newOrder.ingredientId || !newOrder.quantity) return
 
@@ -289,24 +218,25 @@ export default function OrdersPage() {
       status: "Pending",
       orderDate: newOrder.orderDate || new Date().toISOString().split("T")[0],
       deliveryDate: null,
-      createdBy: 4, // Assuming current user is Sarah Johnson (Manager)
-      createdByName: "Sarah Johnson",
+      createdBy: user?.id || 4, // Default to Sarah Johnson if no user
+      createdByName: user?.name || "Sarah Johnson",
     }
 
     // Add new order to the beginning of the array
     setOrders([orderToAdd, ...orders])
 
     // Send WebSocket message about the new order
-    if (webSocket) {
-      webSocket.send(
-        JSON.stringify({
-          type: "order_created",
-          message: `New order for ${orderToAdd.quantity} ${orderToAdd.unit} of ${orderToAdd.ingredientName} created by ${orderToAdd.createdByName}`,
-          data: orderToAdd,
-          timestamp: new Date().toISOString(),
-        }),
-      )
-    }
+    sendMessage({
+      type: "order_created",
+      message: `New order for ${orderToAdd.quantity} ${orderToAdd.unit} of ${orderToAdd.ingredientName} created by ${orderToAdd.createdByName}`,
+      data: orderToAdd,
+      timestamp: new Date().toISOString(),
+      user: {
+        id: user?.id,
+        name: user?.name,
+        role: user?.role,
+      },
+    })
 
     toast({
       title: "Order Created",
@@ -319,8 +249,8 @@ export default function OrdersPage() {
       unit: "g",
       orderDate: new Date().toISOString().split("T")[0],
       status: "Pending",
-      createdBy: 4,
-      createdByName: "Sarah Johnson",
+      createdBy: user?.id || 4,
+      createdByName: user?.name || "Sarah Johnson",
     })
     setIsCreateOrderDialogOpen(false)
   }
@@ -344,23 +274,24 @@ export default function OrdersPage() {
     setOrders(updatedOrders)
 
     // Send WebSocket message about the status update
-    if (webSocket) {
-      webSocket.send(
-        JSON.stringify({
-          type: "order_status_update",
-          message: `Order #${id} for ${orderToUpdate.ingredientName} has been ${status.toLowerCase()} by Sarah Johnson`,
-          data: {
-            id,
-            ingredientName: orderToUpdate.ingredientName,
-            status,
-            deliveryDate: status === "Delivered" ? deliveryDate : null,
-            updatedBy: "Sarah Johnson",
-            updatedAt: new Date().toISOString(),
-          },
-          timestamp: new Date().toISOString(),
-        }),
-      )
-    }
+    sendMessage({
+      type: "order_status_update",
+      message: `Order #${id} for ${orderToUpdate.ingredientName} has been ${status.toLowerCase()} by ${user?.name || "Sarah Johnson"}`,
+      data: {
+        id,
+        ingredientName: orderToUpdate.ingredientName,
+        status,
+        deliveryDate: status === "Delivered" ? deliveryDate : null,
+        updatedBy: user?.name || "Sarah Johnson",
+        updatedAt: new Date().toISOString(),
+      },
+      user: {
+        id: user?.id,
+        name: user?.name,
+        role: user?.role,
+      },
+      timestamp: new Date().toISOString(),
+    })
 
     toast({
       title: `Order ${status}`,
@@ -445,6 +376,51 @@ export default function OrdersPage() {
     return orders.filter((order) => order.status === "Rejected")
   }
 
+  // Function to export orders as CSV
+  const exportToCSV = () => {
+    try {
+      const headers = ["ID", "Ingredient", "Quantity", "Unit", "Status", "Order Date", "Delivery Date", "Created By"]
+      const csvRows = [
+        headers.join(","),
+        ...filteredOrders.map((order) => {
+          return [
+            order.id,
+            order.ingredientName,
+            order.quantity,
+            order.unit,
+            order.status,
+            order.orderDate,
+            order.deliveryDate || "",
+            order.createdByName,
+          ].join(",")
+        }),
+      ]
+
+      const csvString = csvRows.join("\n")
+      const blob = new Blob([csvString], { type: "text/csv;charset=utf-8;" })
+      const url = URL.createObjectURL(blob)
+      const link = document.createElement("a")
+      link.setAttribute("href", url)
+      link.setAttribute("download", `orders_${new Date().toISOString().split("T")[0]}.csv`)
+      link.style.visibility = "hidden"
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+
+      toast({
+        title: "Export Successful",
+        description: `${filteredOrders.length} orders exported to CSV`,
+      })
+    } catch (error) {
+      console.error("Error exporting to CSV:", error)
+      toast({
+        title: "Export Failed",
+        description: "There was an error exporting the orders to CSV",
+        variant: "destructive",
+      })
+    }
+  }
+
   return (
     <div className="container mx-auto py-6">
       <motion.div
@@ -457,6 +433,12 @@ export default function OrdersPage() {
           Orders Management
         </h1>
         <div className="flex space-x-2">
+          <Button
+            onClick={exportToCSV}
+            className="bg-green-600 hover:bg-green-700 text-white shadow-md hover:shadow-lg transition-all duration-300"
+          >
+            Export to CSV
+          </Button>
           <Dialog open={isCreateOrderDialogOpen} onOpenChange={setIsCreateOrderDialogOpen}>
             <DialogTrigger asChild>
               <Button className="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white shadow-md hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1">
