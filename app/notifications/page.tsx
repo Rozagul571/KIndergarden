@@ -73,6 +73,15 @@ export default function NotificationsPage() {
             name: "Og'iloy Tursunova",
             role: "cook",
           },
+          data: {
+            mealName: "Osh (Plov)",
+            portions: 15,
+            ingredients: [
+              { name: "Rice", quantity: "3kg", remaining: "47kg" },
+              { name: "Beef", quantity: "2.5kg", remaining: "22.5kg" },
+              { name: "Carrots", quantity: "1.5kg", remaining: "18.5kg" },
+            ],
+          },
         },
         {
           id: "2",
@@ -85,17 +94,33 @@ export default function NotificationsPage() {
             name: "Muxtasar Azizova",
             role: "cook",
           },
+          data: {
+            mealName: "Lagman",
+            portions: 12,
+            ingredients: [
+              { name: "Noodles", quantity: "2.4kg", remaining: "17.6kg" },
+              { name: "Beef", quantity: "1.8kg", remaining: "20.7kg" },
+              { name: "Vegetables", quantity: "1.2kg", remaining: "8.8kg" },
+            ],
+          },
         },
         {
           id: "3",
-          type: "meal_served",
-          message: "Aziza Rahimova served 20 portions of Somsa",
+          type: "meal_updated",
+          message: "Aziza Rahimova updated Somsa recipe",
           timestamp: "2025-05-23T09:45:00", // Changed to morning time
           read: false,
           user: {
             id: 5,
             name: "Aziza Rahimova",
             role: "cook",
+          },
+          data: {
+            mealName: "Somsa",
+            changes: [
+              { field: "Ingredients", from: "Beef 100g", to: "Beef 120g" },
+              { field: "Cooking Time", from: "30 min", to: "35 min" },
+            ],
           },
         },
         {
@@ -109,6 +134,14 @@ export default function NotificationsPage() {
             name: "Kamola Umarova",
             role: "manager",
           },
+          data: {
+            name: "Rice",
+            previousQuantity: "50kg",
+            quantity: "35kg",
+            unit: "kg",
+            remaining: "35kg",
+            calculatedBy: "Celery inventory task",
+          },
         },
         {
           id: "5",
@@ -120,6 +153,14 @@ export default function NotificationsPage() {
             id: 6,
             name: "Shakhzoda Kamalova",
             role: "manager",
+          },
+          data: {
+            ingredientName: "Beef",
+            quantity: "25kg",
+            unit: "kg",
+            orderId: "ORD-2023-05-23-001",
+            supplier: "UzMeat Suppliers",
+            calculatedBy: "Celery order management task",
           },
         },
         {
@@ -133,6 +174,12 @@ export default function NotificationsPage() {
             name: "System Alert",
             role: "system",
           },
+          data: {
+            name: "Flour",
+            quantity: "5kg",
+            threshold: "10kg",
+            calculatedBy: "Celery threshold monitoring task",
+          },
         },
         {
           id: "7",
@@ -144,6 +191,12 @@ export default function NotificationsPage() {
             id: 1,
             name: "System Alert",
             role: "system",
+          },
+          data: {
+            rate: "17.3%",
+            threshold: "15%",
+            month: "May 2025",
+            calculatedBy: "Celery monthly efficiency calculation task",
           },
         },
       ]
@@ -161,11 +214,8 @@ export default function NotificationsPage() {
         <div className="relative z-10">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <div>
-              <h1 className="text-3xl font-bold text-white mb-2">Notification Center</h1>
-              <p className="text-amber-100 max-w-xl">
-                Stay informed about system activities, alerts, and updates. Manage your notifications to keep track of
-                important events.
-              </p>
+              <h1 className="text-3xl font-bold text-white mb-2">Alerts</h1>
+              <p className="text-amber-100 max-w-xl">Track system activities and updates</p>
             </div>
             <div className="flex gap-2">
               <Button
@@ -173,7 +223,7 @@ export default function NotificationsPage() {
                 onClick={() => markAllAsRead()}
                 className="bg-white/20 text-white hover:bg-white/30 backdrop-blur-sm"
               >
-                <CheckCircle2 className="mr-2 h-4 w-4" /> Mark All as Read
+                <CheckCircle2 className="mr-2 h-4 w-4" /> Mark All Read
               </Button>
             </div>
           </div>
@@ -183,21 +233,21 @@ export default function NotificationsPage() {
             <div className="bg-white/20 backdrop-blur-sm rounded-lg p-3 text-white">
               <div className="flex items-center gap-2">
                 <Bell className="h-5 w-5" />
-                <span>Total</span>
+                <span>All</span>
               </div>
               <p className="text-2xl font-bold mt-1">{notifications.length}</p>
             </div>
             <div className="bg-white/20 backdrop-blur-sm rounded-lg p-3 text-white">
               <div className="flex items-center gap-2">
                 <AlertTriangle className="h-5 w-5" />
-                <span>Unread</span>
+                <span>New</span>
               </div>
               <p className="text-2xl font-bold mt-1">{notifications.filter((n) => !n.read).length}</p>
             </div>
             <div className="bg-white/20 backdrop-blur-sm rounded-lg p-3 text-white">
               <div className="flex items-center gap-2">
                 <Package className="h-5 w-5" />
-                <span>Inventory</span>
+                <span>Stock</span>
               </div>
               <p className="text-2xl font-bold mt-1">
                 {notifications.filter((n) => n.type.includes("inventory")).length}
@@ -206,7 +256,7 @@ export default function NotificationsPage() {
             <div className="bg-white/20 backdrop-blur-sm rounded-lg p-3 text-white">
               <div className="flex items-center gap-2">
                 <Utensils className="h-5 w-5" />
-                <span>Meals</span>
+                <span>Food</span>
               </div>
               <p className="text-2xl font-bold mt-1">{notifications.filter((n) => n.type.includes("meal")).length}</p>
             </div>
@@ -221,24 +271,24 @@ export default function NotificationsPage() {
               All
             </TabsTrigger>
             <TabsTrigger value="unread" className="data-[state=active]:bg-white">
-              Unread
+              New
             </TabsTrigger>
             <TabsTrigger value="meal" className="data-[state=active]:bg-white">
-              Meals
+              Food
             </TabsTrigger>
             <TabsTrigger value="inventory" className="data-[state=active]:bg-white">
-              Inventory
+              Stock
             </TabsTrigger>
             <TabsTrigger value="order" className="data-[state=active]:bg-white">
-              Orders
+              Buy
             </TabsTrigger>
             <TabsTrigger value="alert" className="data-[state=active]:bg-white">
-              Alerts
+              Warn
             </TabsTrigger>
           </TabsList>
 
           <Button variant="outline" size="sm" className="gap-2">
-            <Filter className="h-4 w-4" /> Filter
+            <Filter className="h-4 w-4" /> Sort
           </Button>
         </div>
 
@@ -247,19 +297,21 @@ export default function NotificationsPage() {
             <CardHeader className="pb-3">
               <CardTitle>
                 {activeTab === "all"
-                  ? "All Notifications"
+                  ? "All Alerts"
                   : activeTab === "unread"
-                    ? "Unread Notifications"
+                    ? "New Alerts"
                     : activeTab === "alert"
-                      ? "System Alerts"
-                      : `${activeTab.charAt(0).toUpperCase() + activeTab.slice(1)} Notifications`}
+                      ? "System Warnings"
+                      : activeTab === "meal"
+                        ? "Food Updates"
+                        : activeTab === "inventory"
+                          ? "Stock Changes"
+                          : "Purchase Orders"}
               </CardTitle>
               <CardDescription>
                 {filteredNotifications.length === 0
-                  ? "No notifications to display"
-                  : `Showing ${filteredNotifications.length} notification${
-                      filteredNotifications.length !== 1 ? "s" : ""
-                    }`}
+                  ? "No alerts to display"
+                  : `Showing ${filteredNotifications.length} alert${filteredNotifications.length !== 1 ? "s" : ""}`}
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -267,7 +319,7 @@ export default function NotificationsPage() {
                 {filteredNotifications.length === 0 ? (
                   <div className="text-center py-8">
                     <Bell className="mx-auto h-12 w-12 text-gray-300" />
-                    <p className="mt-4 text-gray-500">No notifications to display</p>
+                    <p className="mt-4 text-gray-500">No alerts to display</p>
                   </div>
                 ) : (
                   filteredNotifications.map((notification, index) => (
@@ -295,7 +347,7 @@ export default function NotificationsPage() {
                               )}
                               {notification.type.includes("alert") && (
                                 <Badge variant="outline" className="bg-red-100 text-red-800 border-red-200">
-                                  Alert
+                                  Warn
                                 </Badge>
                               )}
                               <Button
@@ -318,7 +370,107 @@ export default function NotificationsPage() {
                               </Button>
                             </div>
                           </div>
-                          <p className="text-gray-700 mt-1">{notification.message}</p>
+                          <div className="mt-1">
+                            <p className="text-gray-700 font-medium">{notification.message}</p>
+
+                            {/* Detailed information section */}
+                            <div className="mt-2 text-sm text-gray-600">
+                              {notification.type.includes("meal_served") && notification.data?.ingredients && (
+                                <div className="space-y-1">
+                                  <div className="font-semibold">Used ingredients:</div>
+                                  <ul className="list-disc pl-5 space-y-1">
+                                    {notification.data.ingredients.map((ing: any, i: number) => (
+                                      <li key={i}>
+                                        {ing.name}: {ing.quantity} (Remaining: {ing.remaining})
+                                      </li>
+                                    ))}
+                                  </ul>
+                                  <div className="text-xs text-gray-500 mt-1">
+                                    Calculated by: Celery meal serving task
+                                  </div>
+                                </div>
+                              )}
+
+                              {notification.type.includes("meal_updated") && notification.data?.changes && (
+                                <div className="space-y-1">
+                                  <div className="font-semibold">Changes to {notification.data.mealName}:</div>
+                                  <ul className="list-disc pl-5 space-y-1">
+                                    {notification.data.changes.map((change: any, i: number) => (
+                                      <li key={i}>
+                                        {change.field}: {change.from} → {change.to}
+                                      </li>
+                                    ))}
+                                  </ul>
+                                  <div className="text-xs text-gray-500 mt-1">
+                                    Calculated by: Celery recipe update task
+                                  </div>
+                                </div>
+                              )}
+
+                              {notification.type.includes("inventory_updated") && notification.data?.name && (
+                                <div className="space-y-1">
+                                  <div className="font-semibold">Inventory update details:</div>
+                                  <div>
+                                    Item: {notification.data.name}
+                                    <br />
+                                    Previous: {notification.data.previousQuantity}
+                                    <br />
+                                    New: {notification.data.quantity}
+                                    <br />
+                                    Remaining: {notification.data.remaining}
+                                  </div>
+                                  <div className="text-xs text-gray-500 mt-1">
+                                    Calculated by: {notification.data.calculatedBy || "Celery inventory task"}
+                                  </div>
+                                </div>
+                              )}
+
+                              {notification.type.includes("order") && notification.data?.ingredientName && (
+                                <div className="space-y-1">
+                                  <div className="font-semibold">Order details:</div>
+                                  <div>
+                                    Order ID: {notification.data.orderId}
+                                    <br />
+                                    Item: {notification.data.ingredientName}
+                                    <br />
+                                    Quantity: {notification.data.quantity}
+                                    <br />
+                                    Supplier: {notification.data.supplier}
+                                  </div>
+                                  <div className="text-xs text-gray-500 mt-1">
+                                    Calculated by: {notification.data.calculatedBy || "Celery order task"}
+                                  </div>
+                                </div>
+                              )}
+
+                              {notification.type.includes("alert") && notification.data?.calculatedBy && (
+                                <div className="space-y-1">
+                                  <div className="font-semibold">Alert details:</div>
+                                  {notification.data.name && (
+                                    <div>
+                                      Item: {notification.data.name}
+                                      <br />
+                                      Current: {notification.data.quantity}
+                                      <br />
+                                      Threshold: {notification.data.threshold}
+                                    </div>
+                                  )}
+                                  {notification.data.rate && (
+                                    <div>
+                                      Period: {notification.data.month}
+                                      <br />
+                                      Rate: {notification.data.rate}
+                                      <br />
+                                      Threshold: {notification.data.threshold}
+                                    </div>
+                                  )}
+                                  <div className="text-xs text-gray-500 mt-1">
+                                    Calculated by: {notification.data.calculatedBy}
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          </div>
                           <div className="flex justify-between items-center mt-2 text-sm text-gray-500">
                             <div className="flex items-center gap-4">
                               {notification.user?.name && (
@@ -346,32 +498,32 @@ export default function NotificationsPage() {
 
       {/* System Features Section */}
       <div className="mt-8">
-        <h2 className="text-2xl font-bold mb-4">System Features</h2>
+        <h2 className="text-2xl font-bold mb-4">System Info</h2>
         <div className="grid md:grid-cols-2 gap-6">
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <AlertTriangle className="h-5 w-5 text-amber-500" />
-                Notifications & Alerts
+                Alerts & Warnings
               </CardTitle>
             </CardHeader>
             <CardContent>
               <ul className="space-y-2">
                 <li className="flex items-start gap-2">
                   <CheckCircle2 className="h-4 w-4 text-green-500 mt-1 flex-shrink-0" />
-                  <span>Ingredient threshold alerts when quantity falls below defined level</span>
+                  <span>Stock warnings when quantity falls below threshold</span>
                 </li>
                 <li className="flex items-start gap-2">
                   <CheckCircle2 className="h-4 w-4 text-green-500 mt-1 flex-shrink-0" />
-                  <span>Monthly discrepancy rate monitoring with alerts at 15% threshold</span>
+                  <span>Monthly rate monitoring with alerts at 15% threshold</span>
                 </li>
                 <li className="flex items-start gap-2">
                   <CheckCircle2 className="h-4 w-4 text-green-500 mt-1 flex-shrink-0" />
-                  <span>Real-time notifications for all inventory and meal activities</span>
+                  <span>Real-time updates for all stock and food activities</span>
                 </li>
                 <li className="flex items-start gap-2">
                   <CheckCircle2 className="h-4 w-4 text-green-500 mt-1 flex-shrink-0" />
-                  <span>Role-based notification delivery to appropriate staff members</span>
+                  <span>Role-based alert delivery to appropriate staff</span>
                 </li>
               </ul>
             </CardContent>
@@ -381,7 +533,7 @@ export default function NotificationsPage() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Clock className="h-5 w-5 text-amber-500" />
-                Background Tasks
+                Auto Tasks
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -392,15 +544,15 @@ export default function NotificationsPage() {
                 </li>
                 <li className="flex items-start gap-2">
                   <CheckCircle2 className="h-4 w-4 text-green-500 mt-1 flex-shrink-0" />
-                  <span>Automatic monthly report generation on the 1st of each month</span>
+                  <span>Automatic monthly report generation on the 1st</span>
                 </li>
                 <li className="flex items-start gap-2">
                   <CheckCircle2 className="h-4 w-4 text-green-500 mt-1 flex-shrink-0" />
-                  <span>Regular inventory checks every 6 hours</span>
+                  <span>Regular stock checks every 6 hours</span>
                 </li>
                 <li className="flex items-start gap-2">
                   <CheckCircle2 className="h-4 w-4 text-green-500 mt-1 flex-shrink-0" />
-                  <span>WebSocket integration for real-time updates across the system</span>
+                  <span>Live updates across the system</span>
                 </li>
               </ul>
             </CardContent>

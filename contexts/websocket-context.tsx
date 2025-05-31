@@ -164,6 +164,19 @@ export function WebSocketProvider({
       // Set as last message
       setLastMessage(data)
 
+      // Add calculation information if not present
+      if (data.data && !data.data.calculatedBy) {
+        if (data.type.includes("inventory")) {
+          data.data.calculatedBy = "Celery inventory task"
+        } else if (data.type.includes("meal")) {
+          data.data.calculatedBy = "Celery meal processing task"
+        } else if (data.type.includes("order")) {
+          data.data.calculatedBy = "Celery order management task"
+        } else {
+          data.data.calculatedBy = "Celery background task"
+        }
+      }
+
       // Create notification from message
       const notification: Notification = {
         id: data.id || Date.now(),
@@ -231,6 +244,22 @@ export function WebSocketProvider({
           role: user?.role || "user",
         },
         timestamp: message.timestamp || new Date().toISOString(),
+      }
+
+      // Ensure data object exists
+      if (!messageWithUser.data) {
+        messageWithUser.data = {}
+      }
+
+      // Add calculation information
+      if (messageWithUser.type?.includes("inventory")) {
+        messageWithUser.data.calculatedBy = "Celery inventory task"
+      } else if (messageWithUser.type?.includes("meal")) {
+        messageWithUser.data.calculatedBy = "Celery meal processing task"
+      } else if (messageWithUser.type?.includes("order")) {
+        messageWithUser.data.calculatedBy = "Celery order management task"
+      } else {
+        messageWithUser.data.calculatedBy = "Celery background task"
       }
 
       if (socket && connected && connectionType === "real") {
