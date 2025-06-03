@@ -1,5 +1,7 @@
 "use client"
 
+import { Badge } from "@/components/ui/badge"
+
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -20,7 +22,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { AlertCircle, Edit, Plus, Trash, ShoppingCart, MinusCircle, PlusCircle } from "lucide-react"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Slider } from "@/components/ui/slider"
-import { Badge } from "@/components/ui/badge"
 import { useToast } from "@/hooks/use-toast"
 import { motion, AnimatePresence } from "framer-motion"
 import type { InventoryItem } from "@/types/inventory"
@@ -30,63 +31,63 @@ import { useWebSocket } from "@/contexts/websocket-context"
 const initialInventory: InventoryItem[] = [
   {
     id: 1,
-    name: "Beef",
+    name: "Rice",
     quantity: 5000,
-    unit: "g",
+    unit: "kg",
     deliveryDate: "2025-05-10",
     threshold: 1000,
     status: "Available",
   },
   {
     id: 2,
-    name: "Potato",
+    name: "Beef",
     quantity: 500,
-    unit: "g",
+    unit: "kg",
     deliveryDate: "2025-05-08",
     threshold: 2000,
     status: "Low",
   },
   {
     id: 3,
-    name: "Salt",
+    name: "Carrots",
     quantity: 1500,
-    unit: "g",
+    unit: "kg",
     deliveryDate: "2025-05-05",
     threshold: 500,
     status: "Available",
   },
   {
     id: 4,
-    name: "Chicken",
+    name: "Onions",
     quantity: 300,
-    unit: "g",
+    unit: "kg",
     deliveryDate: "2025-05-11",
     threshold: 800,
     status: "Low",
   },
   {
     id: 5,
-    name: "Rice",
+    name: "Flour",
     quantity: 10000,
-    unit: "g",
+    unit: "kg",
     deliveryDate: "2025-05-07",
     threshold: 2000,
     status: "Available",
   },
   {
     id: 6,
-    name: "Carrot",
+    name: "Potatoes",
     quantity: 0,
-    unit: "g",
+    unit: "kg",
     deliveryDate: "2025-05-09",
     threshold: 1000,
     status: "Out of Stock",
   },
   {
     id: 7,
-    name: "Onion",
+    name: "Salt",
     quantity: 3500,
-    unit: "g",
+    unit: "kg",
     deliveryDate: "2025-05-10",
     threshold: 800,
     status: "Available",
@@ -99,7 +100,7 @@ export default function InventoryPage() {
   const [newItem, setNewItem] = useState<Partial<InventoryItem>>({
     name: "",
     quantity: 1000,
-    unit: "g",
+    unit: "kg",
     deliveryDate: new Date().toISOString().split("T")[0],
     threshold: 200,
     status: "Available",
@@ -163,7 +164,7 @@ export default function InventoryPage() {
       id: newId,
       name: newItem.name,
       quantity: Number(newItem.quantity),
-      unit: newItem.unit || "g",
+      unit: newItem.unit || "kg",
       deliveryDate: newItem.deliveryDate || new Date().toISOString().split("T")[0],
       threshold: Number(newItem.threshold) || 0,
       status: itemStatus,
@@ -187,7 +188,7 @@ export default function InventoryPage() {
     setNewItem({
       name: "",
       quantity: 1000,
-      unit: "g",
+      unit: "kg",
       deliveryDate: new Date().toISOString().split("T")[0],
       threshold: 200,
       status: "Available",
@@ -453,19 +454,19 @@ export default function InventoryPage() {
         className="flex justify-between items-center mb-6"
       >
         <h1 className="text-3xl font-bold bg-gradient-to-r from-amber-600 to-orange-600 bg-clip-text text-transparent">
-          Inventory Management
+          Stock Management
         </h1>
         <div className="flex space-x-2">
           <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
             <DialogTrigger asChild>
               <Button className="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white shadow-md hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1">
-                <Plus className="mr-2 h-4 w-4" /> Add Ingredient
+                <Plus className="mr-2 h-4 w-4" /> Add Item
               </Button>
             </DialogTrigger>
             <DialogContent className="border-amber-200 shadow-xl">
               <DialogHeader>
-                <DialogTitle className="text-amber-700">Add New Ingredient</DialogTitle>
-                <DialogDescription>Enter the details of the new ingredient to add to inventory.</DialogDescription>
+                <DialogTitle className="text-amber-700">Add New Item</DialogTitle>
+                <DialogDescription>Enter the details of the new item to add to stock.</DialogDescription>
               </DialogHeader>
               <div className="grid gap-4 py-4">
                 <div className="grid grid-cols-4 items-center gap-4">
@@ -515,10 +516,10 @@ export default function InventoryPage() {
                           <SelectValue placeholder="Unit" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="g">grams</SelectItem>
                           <SelectItem value="kg">kilograms</SelectItem>
-                          <SelectItem value="ml">milliliters</SelectItem>
+                          <SelectItem value="g">grams</SelectItem>
                           <SelectItem value="l">liters</SelectItem>
+                          <SelectItem value="ml">milliliters</SelectItem>
                           <SelectItem value="pcs">pieces</SelectItem>
                         </SelectContent>
                       </Select>
@@ -937,8 +938,8 @@ export default function InventoryPage() {
                         <SelectValue placeholder="Unit" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="g">grams</SelectItem>
                         <SelectItem value="kg">kilograms</SelectItem>
+                        <SelectItem value="g">grams</SelectItem>
                         <SelectItem value="ml">milliliters</SelectItem>
                         <SelectItem value="l">liters</SelectItem>
                         <SelectItem value="pcs">pieces</SelectItem>
@@ -1026,274 +1027,5 @@ export default function InventoryPage() {
                   </span>
                 </div>
                 <p className="text-xs text-amber-700">
-                  This is how the item will appear in your inventory based on the quantity and threshold values.
-                </p>
-              </div>
-            </div>
-          )}
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setIsEditDialogOpen(false)}
-              className="border-amber-300 text-amber-700 hover:bg-amber-50"
-            >
-              Cancel
-            </Button>
-            <Button
-              onClick={handleEditItem}
-              className="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white shadow-md"
-            >
-              Save Changes
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Delivery Dialog */}
-      <Dialog open={isDeliveryDialogOpen} onOpenChange={setIsDeliveryDialogOpen}>
-        <DialogContent className="border-amber-200 shadow-xl">
-          <DialogHeader>
-            <DialogTitle className="text-amber-700">Record Delivery</DialogTitle>
-            <DialogDescription>Record a new delivery for {deliveryItem.name}.</DialogDescription>
-          </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="delivery-quantity" className="text-right text-amber-700">
-                Quantity
-              </Label>
-              <div className="col-span-3">
-                <div className="flex items-center space-x-2 mb-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="h-8 w-8 p-0 border-amber-300"
-                    onClick={() =>
-                      setDeliveryItem({
-                        ...deliveryItem,
-                        deliveryQuantity: Math.max(0, Number(deliveryItem.deliveryQuantity) - 100),
-                      })
-                    }
-                  >
-                    <MinusCircle className="h-4 w-4" />
-                  </Button>
-                  <Input
-                    id="delivery-quantity"
-                    type="number"
-                    value={deliveryItem.deliveryQuantity}
-                    onChange={(e) => setDeliveryItem({ ...deliveryItem, deliveryQuantity: Number(e.target.value) })}
-                    className="flex-1 border-amber-200 focus:border-amber-500"
-                  />
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="h-8 w-8 p-0 border-amber-300"
-                    onClick={() =>
-                      setDeliveryItem({
-                        ...deliveryItem,
-                        deliveryQuantity: Number(deliveryItem.deliveryQuantity) + 100,
-                      })
-                    }
-                  >
-                    <PlusCircle className="h-4 w-4" />
-                  </Button>
-                  <Select
-                    value={inventory.find((item) => item.id === deliveryItem.id)?.unit || "g"}
-                    onValueChange={(value) => {}}
-                  >
-                    <SelectTrigger className="w-[100px] border-amber-200">
-                      <SelectValue placeholder="Unit" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="g">grams</SelectItem>
-                      <SelectItem value="kg">kilograms</SelectItem>
-                      <SelectItem value="ml">milliliters</SelectItem>
-                      <SelectItem value="l">liters</SelectItem>
-                      <SelectItem value="pcs">pieces</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <Slider
-                  value={[Number(deliveryItem.deliveryQuantity)]}
-                  min={0}
-                  max={5000}
-                  step={100}
-                  onValueChange={(values) => setDeliveryItem({ ...deliveryItem, deliveryQuantity: values[0] })}
-                  className="py-4"
-                />
-                <div className="flex justify-between text-xs text-amber-700">
-                  <span>0</span>
-                  <span>1250</span>
-                  <span>2500</span>
-                  <span>3750</span>
-                  <span>5000</span>
-                </div>
-              </div>
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="delivery-date" className="text-right text-amber-700">
-                Delivery Date
-              </Label>
-              <Input
-                id="delivery-date"
-                type="date"
-                defaultValue={new Date().toISOString().split("T")[0]}
-                className="col-span-3 border-amber-200 focus:border-amber-500"
-              />
-            </div>
-            <div className="bg-green-50 border border-green-200 rounded-md p-3 mt-2">
-              <div className="flex items-center">
-                <ShoppingCart className="h-5 w-5 mr-2 text-green-600" />
-                <span className="text-sm font-medium text-green-700">Delivery Summary</span>
-              </div>
-              <p className="text-xs text-green-700 mt-1">
-                This delivery will add {deliveryItem.deliveryQuantity} units to your current inventory of{" "}
-                {inventory.find((item) => item.id === deliveryItem.id)?.quantity || 0} units.
-              </p>
-            </div>
-          </div>
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setIsDeliveryDialogOpen(false)}
-              className="border-amber-300 text-amber-700 hover:bg-amber-50"
-            >
-              Cancel
-            </Button>
-            <Button onClick={handleDelivery} className="bg-green-600 hover:bg-green-700 text-white">
-              Record Delivery
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Order Dialog */}
-      <Dialog open={isOrderDialogOpen} onOpenChange={setIsOrderDialogOpen}>
-        <DialogContent className="border-amber-200 shadow-xl">
-          <DialogHeader>
-            <DialogTitle className="text-amber-700">Create Order</DialogTitle>
-            <DialogDescription>Create a new order for {deliveryItem.name}.</DialogDescription>
-          </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="order-quantity" className="text-right text-amber-700">
-                Quantity
-              </Label>
-              <div className="col-span-3">
-                <div className="flex items-center space-x-2 mb-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="h-8 w-8 p-0 border-amber-300"
-                    onClick={() =>
-                      setDeliveryItem({
-                        ...deliveryItem,
-                        deliveryQuantity: Math.max(0, Number(deliveryItem.deliveryQuantity) - 100),
-                      })
-                    }
-                  >
-                    <MinusCircle className="h-4 w-4" />
-                  </Button>
-                  <Input
-                    id="order-quantity"
-                    type="number"
-                    value={deliveryItem.deliveryQuantity}
-                    onChange={(e) => setDeliveryItem({ ...deliveryItem, deliveryQuantity: Number(e.target.value) })}
-                    className="flex-1 border-amber-200 focus:border-amber-500"
-                  />
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="h-8 w-8 p-0 border-amber-300"
-                    onClick={() =>
-                      setDeliveryItem({
-                        ...deliveryItem,
-                        deliveryQuantity: Number(deliveryItem.deliveryQuantity) + 100,
-                      })
-                    }
-                  >
-                    <PlusCircle className="h-4 w-4" />
-                  </Button>
-                  <Select
-                    value={inventory.find((item) => item.id === deliveryItem.id)?.unit || "g"}
-                    onValueChange={(value) => {}}
-                  >
-                    <SelectTrigger className="w-[100px] border-amber-200">
-                      <SelectValue placeholder="Unit" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="g">grams</SelectItem>
-                      <SelectItem value="kg">kilograms</SelectItem>
-                      <SelectItem value="ml">milliliters</SelectItem>
-                      <SelectItem value="l">liters</SelectItem>
-                      <SelectItem value="pcs">pieces</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <Slider
-                  value={[Number(deliveryItem.deliveryQuantity)]}
-                  min={0}
-                  max={5000}
-                  step={100}
-                  onValueChange={(values) => setDeliveryItem({ ...deliveryItem, deliveryQuantity: values[0] })}
-                  className="py-4"
-                />
-                <div className="flex justify-between text-xs text-amber-700">
-                  <span>0</span>
-                  <span>1250</span>
-                  <span>2500</span>
-                  <span>3750</span>
-                  <span>5000</span>
-                </div>
-              </div>
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="order-date" className="text-right text-amber-700">
-                Order Date
-              </Label>
-              <Input
-                id="order-date"
-                type="date"
-                defaultValue={new Date().toISOString().split("T")[0]}
-                className="col-span-3 border-amber-200 focus:border-amber-500"
-              />
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="order-notes" className="text-right text-amber-700">
-                Notes
-              </Label>
-              <Input
-                id="order-notes"
-                placeholder="Any special instructions"
-                className="col-span-3 border-amber-200 focus:border-amber-500"
-              />
-            </div>
-            <div className="bg-amber-50 border border-amber-200 rounded-md p-3 mt-2">
-              <div className="flex items-center">
-                <ShoppingCart className="h-5 w-5 mr-2 text-amber-600" />
-                <span className="text-sm font-medium text-amber-700">Order Summary</span>
-              </div>
-              <p className="text-xs text-amber-700 mt-1">
-                This order will be sent to your suppliers and tracked in the Orders section.
-              </p>
-            </div>
-          </div>
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setIsOrderDialogOpen(false)}
-              className="border-amber-300 text-amber-700 hover:bg-amber-50"
-            >
-              Cancel
-            </Button>
-            <Button
-              onClick={handleCreateOrder}
-              className="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white"
-            >
-              <ShoppingCart className="mr-2 h-4 w-4" /> Create Order
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </div>
-  )
-}
+                  This is how the item will appear in your inventory based on the quantity and threshold values.\
+                </

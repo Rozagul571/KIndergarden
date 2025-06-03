@@ -2,7 +2,7 @@ from pydantic import BaseModel
 from typing import List, Optional, Dict, Any
 from datetime import datetime
 
-# Pydantic Models for API
+# User Schemas
 class UserBase(BaseModel):
     email: str
     name: str
@@ -34,6 +34,7 @@ class TokenData(BaseModel):
     email: Optional[str] = None
     role: Optional[str] = None
 
+# Ingredient Schemas
 class IngredientBase(BaseModel):
     name: str
     quantity: float
@@ -77,19 +78,18 @@ class IngredientDeliveryResponse(IngredientDeliveryBase):
     class Config:
         orm_mode = True
 
-class MealBase(BaseModel):
+# Meal Schemas
+class MealIngredientCreate(BaseModel):
+    ingredientId: int
     name: str
-    description: str
-    image_url: Optional[str] = None
+    quantity: float
+    unit: str
 
-class MealCreate(MealBase):
-    ingredients: List[Dict[str, Any]]  # List of {ingredient_id, quantity}
-
-class MealUpdate(BaseModel):
-    name: Optional[str] = None
+class MealCreate(BaseModel):
+    name: str
     description: Optional[str] = None
     image_url: Optional[str] = None
-    ingredients: Optional[List[Dict[str, Any]]] = None
+    ingredients: List[MealIngredientCreate]
 
 class MealIngredientResponse(BaseModel):
     id: int
@@ -101,11 +101,14 @@ class MealIngredientResponse(BaseModel):
     class Config:
         orm_mode = True
 
-class MealResponse(MealBase):
+class MealResponse(BaseModel):
     id: int
+    name: str
+    description: Optional[str]
+    image_url: Optional[str]
+    ingredients: List[MealIngredientResponse]
     created_at: datetime
     updated_at: datetime
-    ingredients: List[MealIngredientResponse]
 
     class Config:
         orm_mode = True
@@ -128,6 +131,7 @@ class MealServingResponse(MealServingBase):
     class Config:
         orm_mode = True
 
+# Order Schemas
 class OrderBase(BaseModel):
     ingredient_id: int
     quantity: float
@@ -149,24 +153,29 @@ class OrderResponse(OrderBase):
     class Config:
         orm_mode = True
 
-# Notification schemas
+# Notification Schemas
 class NotificationBase(BaseModel):
     message: str
     notification_type: str = "system"
-    
+
 class NotificationCreate(NotificationBase):
     user_id: Optional[int] = None
-    
+
 class NotificationResponse(NotificationBase):
     id: int
     user_id: Optional[int]
     is_read: bool
     created_at: datetime
     updated_at: Optional[datetime]
-    
+    created_by: Optional[int]
+
     class Config:
         orm_mode = True
 
+class NotificationUpdate(BaseModel):
+    is_read: Optional[bool] = None
+
+# Report Schemas
 class ReportBase(BaseModel):
     title: str
     content: str

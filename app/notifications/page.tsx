@@ -24,13 +24,23 @@ import { motion } from "framer-motion"
 import { useAuth } from "@/hooks/use-auth"
 
 export default function NotificationsPage() {
-  const { notifications, markAsRead, markAllAsRead, deleteNotification } = useWebSocket()
+  // Initialize with empty values to prevent errors if context is not available yet
+  const websocketContext = useWebSocket()
+  const {
+    notifications = [],
+    markAsRead = () => {},
+    markAllAsRead = () => {},
+    deleteNotification = () => {},
+  } = websocketContext || {}
+
   const [activeTab, setActiveTab] = useState("all")
-  const [filteredNotifications, setFilteredNotifications] = useState(notifications)
+  const [filteredNotifications, setFilteredNotifications] = useState<any[]>([])
   const { user } = useAuth()
 
   // Filter notifications based on active tab
   useEffect(() => {
+    if (!notifications) return
+
     if (activeTab === "all") {
       setFilteredNotifications(notifications)
     } else if (activeTab === "unread") {
@@ -60,7 +70,7 @@ export default function NotificationsPage() {
 
   // Add some sample notifications for May 23 with morning times
   useEffect(() => {
-    if (notifications.length === 0) {
+    if (!notifications || notifications.length === 0) {
       const sampleNotifications = [
         {
           id: "1",
@@ -202,15 +212,29 @@ export default function NotificationsPage() {
       ]
 
       // In a real app, you would add these to the WebSocket context
-      // For now, we'll just pretend they're already there
+      // For now, we'll just use them directly
+      setFilteredNotifications(sampleNotifications)
     }
   }, [notifications])
+
+  // If the WebSocket context is not available yet, show a loading state
+  if (!websocketContext) {
+    return (
+      <div className="container mx-auto py-6">
+        <div className="flex items-center justify-center h-64">
+          <div className="text-center">
+            <Bell className="mx-auto h-12 w-12 text-gray-300 animate-pulse" />
+            <p className="mt-4 text-gray-500">Loading notifications...</p>
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="container mx-auto py-6">
       {/* Modern header section */}
       <div className="relative bg-gradient-to-r from-amber-500 to-orange-600 rounded-xl p-8 mb-8 overflow-hidden">
-        <div className="absolute inset-0 bg-grid-white/10 [mask-image:linear-gradient(0deg,rgba(255,255,255,0.1),rgba(255,255,255,0.5))]"></div>
         <div className="relative z-10">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <div>
@@ -235,14 +259,14 @@ export default function NotificationsPage() {
                 <Bell className="h-5 w-5" />
                 <span>All</span>
               </div>
-              <p className="text-2xl font-bold mt-1">{notifications.length}</p>
+              <p className="text-2xl font-bold mt-1">{filteredNotifications.length}</p>
             </div>
             <div className="bg-white/20 backdrop-blur-sm rounded-lg p-3 text-white">
               <div className="flex items-center gap-2">
                 <AlertTriangle className="h-5 w-5" />
                 <span>New</span>
               </div>
-              <p className="text-2xl font-bold mt-1">{notifications.filter((n) => !n.read).length}</p>
+              <p className="text-2xl font-bold mt-1">{filteredNotifications.filter((n) => !n.read).length}</p>
             </div>
             <div className="bg-white/20 backdrop-blur-sm rounded-lg p-3 text-white">
               <div className="flex items-center gap-2">
@@ -250,7 +274,7 @@ export default function NotificationsPage() {
                 <span>Stock</span>
               </div>
               <p className="text-2xl font-bold mt-1">
-                {notifications.filter((n) => n.type.includes("inventory")).length}
+                {filteredNotifications.filter((n) => n.type.includes("inventory")).length}
               </p>
             </div>
             <div className="bg-white/20 backdrop-blur-sm rounded-lg p-3 text-white">
@@ -258,7 +282,9 @@ export default function NotificationsPage() {
                 <Utensils className="h-5 w-5" />
                 <span>Food</span>
               </div>
-              <p className="text-2xl font-bold mt-1">{notifications.filter((n) => n.type.includes("meal")).length}</p>
+              <p className="text-2xl font-bold mt-1">
+                {filteredNotifications.filter((n) => n.type.includes("meal")).length}
+              </p>
             </div>
           </div>
         </div>

@@ -23,8 +23,9 @@ import Link from "next/link"
 import { motion } from "framer-motion"
 import { useWebSocket } from "@/contexts/websocket-context"
 import { useToast } from "@/hooks/use-toast"
+import { useAuth } from "@/hooks/use-auth"
 
-// Sample data for demonstration
+// Sample inventory data (ideally fetched from backend)
 const initialInventory: InventoryItem[] = [
   { id: 1, name: "Beef", quantity: 5000, unit: "g", deliveryDate: "2025-05-10", threshold: 1000, status: "Available" },
   {
@@ -99,83 +100,48 @@ const initialInventory: InventoryItem[] = [
   },
 ]
 
-const initialMeals: Meal[] = [
+// Sample meals data for development/testing
+const sampleMeals: Meal[] = [
   {
     id: 1,
-    name: "Osh (Plov)",
-    description: "Traditional Uzbek rice dish with meat and vegetables",
+    name: "Beef Stew",
+    description: "Hearty beef stew with vegetables",
     ingredients: [
-      { ingredientId: 5, name: "Rice", quantity: 100, unit: "g" },
-      { ingredientId: 1, name: "Beef", quantity: 80, unit: "g" },
+      { ingredientId: 1, name: "Beef", quantity: 200, unit: "g" },
+      { ingredientId: 2, name: "Potato", quantity: 100, unit: "g" },
       { ingredientId: 6, name: "Carrot", quantity: 50, unit: "g" },
       { ingredientId: 7, name: "Onion", quantity: 30, unit: "g" },
-      { ingredientId: 3, name: "Salt", quantity: 3, unit: "g" },
-      { ingredientId: 14, name: "Cumin", quantity: 2, unit: "g" },
-      { ingredientId: 10, name: "Water", quantity: 200, unit: "ml" },
     ],
-    imageUrl: "https://www.orexca.com/img/cuisine/plov/uzbek-pilaf.jpg",
+    imageUrl: "/placeholder.svg?height=100&width=100",
   },
   {
     id: 2,
-    name: "Lagman",
-    description: "Uzbek noodle soup with meat and vegetables",
+    name: "Chicken Soup",
+    description: "Nutritious chicken soup",
     ingredients: [
-      { ingredientId: 12, name: "Noodles", quantity: 120, unit: "g" },
-      { ingredientId: 1, name: "Beef", quantity: 70, unit: "g" },
+      { ingredientId: 4, name: "Chicken", quantity: 150, unit: "g" },
       { ingredientId: 6, name: "Carrot", quantity: 40, unit: "g" },
-      { ingredientId: 7, name: "Onion", quantity: 30, unit: "g" },
-      { ingredientId: 15, name: "Bell Pepper", quantity: 30, unit: "g" },
-      { ingredientId: 8, name: "Tomato", quantity: 50, unit: "g" },
-      { ingredientId: 3, name: "Salt", quantity: 3, unit: "g" },
-      { ingredientId: 10, name: "Water", quantity: 300, unit: "ml" },
+      { ingredientId: 7, name: "Onion", quantity: 25, unit: "g" },
+      { ingredientId: 10, name: "Water", quantity: 500, unit: "ml" },
     ],
-    imageUrl: "https://t4.ftcdn.net/jpg/02/31/48/03/360_F_231480324_BqyB5EmbS8LQg2uPF9SZHLovPQK8MfuO.jpg",
+    imageUrl: "/placeholder.svg?height=100&width=100",
   },
   {
     id: 3,
-    name: "Somsa",
-    description: "Baked pastry with meat filling",
+    name: "Vegetable Rice",
+    description: "Healthy vegetable rice",
     ingredients: [
-      { ingredientId: 9, name: "Flour", quantity: 80, unit: "g" },
-      { ingredientId: 11, name: "Lamb", quantity: 60, unit: "g" },
-      { ingredientId: 7, name: "Onion", quantity: 20, unit: "g" },
-      { ingredientId: 3, name: "Salt", quantity: 2, unit: "g" },
-      { ingredientId: 14, name: "Cumin", quantity: 1, unit: "g" },
-    ],
-    imageUrl: "https://www.gazeta.uz/media/img/2023/10/0kTVoA16984691510527_l.jpg",
-  },
-  {
-    id: 4,
-    name: "Manti",
-    description: "Steamed dumplings with meat and onions",
-    ingredients: [
-      { ingredientId: 9, name: "Flour", quantity: 70, unit: "g" },
-      { ingredientId: 11, name: "Lamb", quantity: 50, unit: "g" },
-      { ingredientId: 7, name: "Onion", quantity: 30, unit: "g" },
-      { ingredientId: 3, name: "Salt", quantity: 2, unit: "g" },
-      { ingredientId: 10, name: "Water", quantity: 20, unit: "ml" },
-    ],
-    imageUrl: "https://image.essen-und-trinken.de/13122998/t/au/v5/w960/r1/-/adobestock-148423716-alju.jpg",
-  },
-  {
-    id: 5,
-    name: "Shurpa",
-    description: "Traditional Uzbek soup with meat and vegetables",
-    ingredients: [
-      { ingredientId: 11, name: "Lamb", quantity: 80, unit: "g" },
-      { ingredientId: 2, name: "Potato", quantity: 70, unit: "g" },
-      { ingredientId: 6, name: "Carrot", quantity: 40, unit: "g" },
-      { ingredientId: 7, name: "Onion", quantity: 30, unit: "g" },
+      { ingredientId: 5, name: "Rice", quantity: 80, unit: "g" },
+      { ingredientId: 6, name: "Carrot", quantity: 30, unit: "g" },
       { ingredientId: 8, name: "Tomato", quantity: 40, unit: "g" },
-      { ingredientId: 3, name: "Salt", quantity: 3, unit: "g" },
-      { ingredientId: 10, name: "Water", quantity: 400, unit: "ml" },
+      { ingredientId: 15, name: "Bell Pepper", quantity: 25, unit: "g" },
     ],
-    imageUrl: "https://recipesfriend.com/uploads/recipeimg/1575394112lamb_veg_soup_shurpa%20(2).jpg",
+    imageUrl: "/placeholder.svg?height=100&width=100",
   },
 ]
 
 export default function MealsPage() {
-  const [meals, setMeals] = useState<Meal[]>(initialMeals)
+  const [meals, setMeals] = useState<Meal[]>([])
   const [inventory] = useState<InventoryItem[]>(initialInventory)
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
@@ -193,15 +159,72 @@ export default function MealsPage() {
     quantity: 0,
     unit: "g",
   })
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
   const { toast } = useToast()
   const { sendMessage } = useWebSocket()
+  const { user, isAuthenticated } = useAuth()
 
+  // Fetch meals from backend on mount
   useEffect(() => {
+    async function fetchMeals() {
+      setIsLoading(true)
+      setError(null)
+      try {
+        // For development/testing, use sample data if API is not available
+        if (process.env.NODE_ENV === "development" && process.env.NEXT_PUBLIC_USE_MOCK_DATA === "true") {
+          console.log("Using sample meals data")
+          setMeals(sampleMeals)
+          setIsLoading(false)
+          return
+        }
+
+        let token = null
+        if (isAuthenticated && user) {
+          token = localStorage.getItem("token")
+        }
+
+        const response = await fetch(`/api/meals?token=${token}`)
+        if (!response.ok) {
+          const errorText = await response.text()
+          console.error("Error response:", errorText)
+          throw new Error(`Failed to fetch meals: ${response.status} ${response.statusText}`)
+        }
+
+        const contentType = response.headers.get("content-type")
+        if (!contentType || !contentType.includes("application/json")) {
+          const text = await response.text()
+          console.error("Non-JSON response:", text)
+          throw new Error("Server did not return JSON")
+        }
+
+        const data = await response.json()
+        console.log("Fetched meals:", data)
+        setMeals(data)
+      } catch (error) {
+        console.error("Error fetching meals:", error)
+        setError(error instanceof Error ? error.message : "Failed to load meals")
+        toast({
+          title: "Error",
+          description: "Failed to load meals from the backend.",
+          variant: "destructive",
+        })
+
+        // Fallback to sample data in case of error
+        console.log("Using fallback sample meals data")
+        setMeals(sampleMeals)
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    fetchMeals()
+
     if (sendMessage) {
       sendMessage(JSON.stringify({ type: "meals_page_viewed" }))
     }
-  }, [sendMessage])
+  }, [sendMessage, toast, isAuthenticated, user])
 
   const calculatePossiblePortions = (meal: Meal): number => {
     if (!meal.ingredients.length) return 0
@@ -217,50 +240,143 @@ export default function MealsPage() {
     )
   }
 
-  const handleAddMeal = () => {
-    if (!newMeal.name || !newMeal.ingredients?.length) return
+  const handleAddMeal = async () => {
+    if (!newMeal.name || !newMeal.ingredients?.length || !user) return
 
-    const newId = Math.max(0, ...meals.map((meal) => meal.id)) + 1
-    const mealToAdd: Meal = {
-      id: newId,
-      name: newMeal.name,
-      description: newMeal.description || "",
-      ingredients: newMeal.ingredients as MealIngredient[],
-      imageUrl: newMeal.imageUrl || "/placeholder.svg?height=100&width=100",
+    try {
+      const mealToAdd: Meal = {
+        id: Math.max(0, ...meals.map((meal) => meal.id)) + 1,
+        name: newMeal.name,
+        description: newMeal.description || "",
+        ingredients: newMeal.ingredients as MealIngredient[],
+        imageUrl: newMeal.imageUrl || "/placeholder.svg?height=100&width=100",
+      }
+
+      // Optimistically update UI
+      setMeals([...meals, mealToAdd])
+
+      // Send notification
+      const ingredientsList = mealToAdd.ingredients.map((ing) => `${ing.name}: ${ing.quantity} ${ing.unit}`).join(", ")
+      const notificationMessage = `${user.name} added new meal "${mealToAdd.name}" with ingredients: ${ingredientsList}`
+
+      if (sendMessage) {
+        sendMessage({
+          type: "meal_added",
+          message: notificationMessage,
+          user: { id: user.id, name: user.name, role: user.role },
+          data: {
+            mealId: mealToAdd.id,
+            mealName: mealToAdd.name,
+            description: mealToAdd.description,
+            ingredients: mealToAdd.ingredients,
+            createdBy: user.name,
+            createdAt: new Date().toISOString(),
+          },
+          timestamp: new Date().toISOString(),
+        })
+      }
+
+      // Reset form
+      setNewMeal({
+        name: "",
+        description: "",
+        ingredients: [],
+        imageUrl: "/placeholder.svg?height=100&width=100",
+      })
+      setIsAddDialogOpen(false)
+
+      toast({
+        title: "Meal Added",
+        description: "The meal has been successfully added.",
+      })
+
+      // Call backend API to save meal
+      const response = await fetch("/api/meals", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: mealToAdd.name,
+          description: mealToAdd.description,
+          image_url: mealToAdd.imageUrl,
+          ingredients: mealToAdd.ingredients.map((ing) => ({
+            ingredientId: ing.ingredientId,
+            name: ing.name,
+            quantity: ing.quantity,
+            unit: ing.unit,
+          })),
+        }),
+      })
+
+      if (!response.ok) {
+        const errorText = await response.text()
+        console.error("Error saving meal:", errorText)
+        throw new Error("Failed to save meal")
+      }
+
+      // Refresh meals list after successful save
+      const updatedResponse = await fetch("/api/meals")
+      if (updatedResponse.ok) {
+        const updatedData = await updatedResponse.json()
+        setMeals(updatedData)
+      }
+    } catch (error) {
+      console.error("Error saving meal:", error)
+      toast({
+        title: "Error",
+        description: "Failed to save meal to the backend.",
+        variant: "destructive",
+      })
     }
-
-    setMeals([...meals, mealToAdd])
-    setNewMeal({
-      name: "",
-      description: "",
-      ingredients: [],
-      imageUrl: "/placeholder.svg?height=100&width=100",
-    })
-    setIsAddDialogOpen(false)
-
-    toast({
-      title: "Meal Added",
-      description: "The meal has been successfully added.",
-    })
   }
 
   const handleAddIngredientToMeal = () => {
-    if (!newIngredient.ingredientId || !newIngredient.quantity) return
+    if (!newIngredient.ingredientId || !newIngredient.quantity || newIngredient.quantity <= 0) {
+      toast({
+        title: "Invalid Input",
+        description: "Please select an ingredient and enter a valid quantity.",
+        variant: "destructive",
+      })
+      return
+    }
 
     const inventoryItem = inventory.find((item) => item.id === newIngredient.ingredientId)
     if (!inventoryItem) return
 
-    const ingredientToAdd: MealIngredient = {
-      ingredientId: newIngredient.ingredientId,
-      name: inventoryItem.name,
-      quantity: Number(newIngredient.quantity),
-      unit: inventoryItem.unit,
-    }
+    // Check if ingredient already exists in the meal
+    const existingIngredientIndex =
+      newMeal.ingredients?.findIndex((ing) => ing.ingredientId === newIngredient.ingredientId) ?? -1
 
-    setNewMeal({
-      ...newMeal,
-      ingredients: [...(newMeal.ingredients || []), ingredientToAdd],
-    })
+    if (existingIngredientIndex >= 0 && newMeal.ingredients) {
+      // Update existing ingredient quantity
+      const updatedIngredients = [...newMeal.ingredients]
+      updatedIngredients[existingIngredientIndex] = {
+        ...updatedIngredients[existingIngredientIndex],
+        quantity: (updatedIngredients[existingIngredientIndex].quantity || 0) + Number(newIngredient.quantity),
+      }
+
+      setNewMeal({
+        ...newMeal,
+        ingredients: updatedIngredients,
+      })
+
+      toast({
+        title: "Ingredient Updated",
+        description: `Updated ${inventoryItem.name} quantity in the meal.`,
+      })
+    } else {
+      // Add new ingredient
+      const ingredientToAdd: MealIngredient = {
+        ingredientId: newIngredient.ingredientId,
+        name: inventoryItem.name,
+        quantity: Number(newIngredient.quantity),
+        unit: inventoryItem.unit,
+      }
+
+      setNewMeal({
+        ...newMeal,
+        ingredients: [...(newMeal.ingredients || []), ingredientToAdd],
+      })
+    }
 
     setNewIngredient({
       ingredientId: 0,
@@ -270,50 +386,275 @@ export default function MealsPage() {
     })
   }
 
-  const handleUpdateMeal = () => {
-    if (!selectedMeal) return
+  const handleUpdateMeal = async () => {
+    if (!selectedMeal || !user) return
 
-    const updatedMeals = meals.map((meal) => (meal.id === selectedMeal.id ? selectedMeal : meal))
+    try {
+      // Find the original meal to compare changes
+      const originalMeal = meals.find((meal) => meal.id === selectedMeal.id)
+      if (!originalMeal) return
 
-    setMeals(updatedMeals)
-    setSelectedMeal(null)
-    setIsEditDialogOpen(false)
+      // Update meals state
+      const updatedMeals = meals.map((meal) => (meal.id === selectedMeal.id ? selectedMeal : meal))
+      setMeals(updatedMeals)
 
-    toast({
-      title: "Meal Updated",
-      description: "The meal has been successfully updated.",
-    })
+      // Detect changes
+      const changes: string[] = []
+      if (originalMeal.name !== selectedMeal.name) {
+        changes.push(`name changed to "${selectedMeal.name}"`)
+      }
+      if (originalMeal.description !== selectedMeal.description) {
+        changes.push(`description updated`)
+      }
+
+      // Compare ingredients
+      const originalIngredients = originalMeal.ingredients.reduce(
+        (acc, ing) => ({ ...acc, [ing.ingredientId]: ing.quantity }),
+        {} as Record<number, number>,
+      )
+      const updatedIngredients = selectedMeal.ingredients.reduce(
+        (acc, ing) => ({ ...acc, [ing.ingredientId]: ing.quantity }),
+        {} as Record<number, number>,
+      )
+
+      selectedMeal.ingredients.forEach((ing) => {
+        const originalQty = originalIngredients[ing.ingredientId] || 0
+        if (originalQty === 0) {
+          changes.push(`added ${ing.name}: ${ing.quantity} ${ing.unit}`)
+        } else if (ing.quantity !== originalQty) {
+          changes.push(`${ing.name} quantity changed to ${ing.quantity} ${ing.unit}`)
+        }
+      })
+
+      // Check for removed ingredients
+      originalMeal.ingredients.forEach((ing) => {
+        if (!updatedIngredients[ing.ingredientId]) {
+          changes.push(`removed ${ing.name}`)
+        }
+      })
+
+      // Send notification
+      const notificationMessage = changes.length
+        ? `${user.name} updated meal "${selectedMeal.name}": ${changes.join(", ")}`
+        : `${user.name} updated meal "${selectedMeal.name}"`
+
+      if (sendMessage) {
+        sendMessage({
+          type: "meal_updated",
+          message: notificationMessage,
+          user: { id: user.id, name: user.name, role: user.role },
+          data: {
+            mealId: selectedMeal.id,
+            mealName: selectedMeal.name,
+            changes,
+            updatedBy: user.name,
+            updatedAt: new Date().toISOString(),
+          },
+          timestamp: new Date().toISOString(),
+        })
+      }
+
+      setSelectedMeal(null)
+      setIsEditDialogOpen(false)
+
+      toast({
+        title: "Meal Updated",
+        description: "The meal has been successfully updated.",
+      })
+
+      // Call backend API to update meal
+      const response = await fetch(`/api/meals/${selectedMeal.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: selectedMeal.name,
+          description: selectedMeal.description,
+          image_url: selectedMeal.imageUrl,
+          ingredients: selectedMeal.ingredients.map((ing) => ({
+            ingredientId: ing.ingredientId,
+            name: ing.name,
+            quantity: ing.quantity,
+            unit: ing.unit,
+          })),
+        }),
+      })
+
+      if (!response.ok) {
+        const errorText = await response.text()
+        console.error("Error updating meal:", errorText)
+        throw new Error("Failed to update meal")
+      }
+
+      // Refresh meals list after successful update
+      const updatedResponse = await fetch("/api/meals")
+      if (updatedResponse.ok) {
+        const updatedData = await updatedResponse.json()
+        setMeals(updatedData)
+      }
+    } catch (error) {
+      console.error("Error updating meal:", error)
+      toast({
+        title: "Error",
+        description: "Failed to update meal in the backend.",
+        variant: "destructive",
+      })
+    }
   }
 
-  const handleDeleteMeal = (id: number) => {
-    setMeals(meals.filter((meal) => meal.id !== id))
+  const handleDeleteMeal = async (id: number) => {
+    const mealToDelete = meals.find((meal) => meal.id === id)
+    if (!mealToDelete || !user) return
 
-    toast({
-      title: "Meal Deleted",
-      description: "The meal has been successfully deleted.",
-    })
+    try {
+      // Optimistically update UI
+      setMeals(meals.filter((meal) => meal.id !== id))
+
+      // Send notification
+      const notificationMessage = `${user.name} deleted meal "${mealToDelete.name}"`
+
+      if (sendMessage) {
+        sendMessage({
+          type: "meal_deleted",
+          message: notificationMessage,
+          user: { id: user.id, name: user.name, role: user.role },
+          data: {
+            mealId: mealToDelete.id,
+            mealName: mealToDelete.name,
+            deletedBy: user.name,
+            deletedAt: new Date().toISOString(),
+          },
+          timestamp: new Date().toISOString(),
+        })
+      }
+
+      toast({
+        title: "Meal Deleted",
+        description: "The meal has been successfully deleted.",
+      })
+
+      // Call backend API to delete meal
+      const response = await fetch(`/api/meals/${id}`, {
+        method: "DELETE",
+      })
+
+      if (!response.ok) {
+        const errorText = await response.text()
+        console.error("Error deleting meal:", errorText)
+        throw new Error("Failed to delete meal")
+      }
+    } catch (error) {
+      console.error("Error deleting meal:", error)
+      toast({
+        title: "Error",
+        description: "Failed to delete meal from the backend.",
+        variant: "destructive",
+      })
+
+      // Restore the deleted meal in case of error
+      if (mealToDelete) {
+        setMeals([...meals.filter((meal) => meal.id !== id), mealToDelete])
+      }
+    }
   }
 
   const handleRemoveIngredientFromMeal = (index: number) => {
-    if (!newMeal.ingredients) return
+    if (!newMeal.ingredients || !user) return
 
+    const removedIngredient = newMeal.ingredients[index]
     const updatedIngredients = [...newMeal.ingredients]
     updatedIngredients.splice(index, 1)
     setNewMeal({
       ...newMeal,
       ingredients: updatedIngredients,
     })
+
+    // Send notification
+    const notificationMessage = `${user.name} removed ingredient "${removedIngredient.name}" from new meal "${newMeal.name || "Untitled"}"`
+
+    if (sendMessage) {
+      sendMessage({
+        type: "meal_updated",
+        message: notificationMessage,
+        user: { id: user.id, name: user.name, role: user.role },
+        data: {
+          mealName: newMeal.name || "Untitled",
+          removedIngredient,
+          updatedBy: user.name,
+          updatedAt: new Date().toISOString(),
+        },
+        timestamp: new Date().toISOString(),
+      })
+    }
   }
 
   const handleRemoveIngredientFromSelectedMeal = (index: number) => {
-    if (!selectedMeal || !selectedMeal.ingredients) return
+    if (!selectedMeal || !selectedMeal.ingredients || !user) return
 
+    const removedIngredient = selectedMeal.ingredients[index]
     const updatedIngredients = [...selectedMeal.ingredients]
     updatedIngredients.splice(index, 1)
     setSelectedMeal({
       ...selectedMeal,
       ingredients: updatedIngredients,
     })
+
+    // Send notification
+    const notificationMessage = `${user.name} removed ingredient "${removedIngredient.name}" from meal "${selectedMeal.name}"`
+
+    if (sendMessage) {
+      sendMessage({
+        type: "meal_updated",
+        message: notificationMessage,
+        user: { id: user.id, name: user.name, role: user.role },
+        data: {
+          mealId: selectedMeal.id,
+          mealName: selectedMeal.name,
+          removedIngredient,
+          updatedBy: user.name,
+          updatedAt: new Date().toISOString(),
+        },
+        timestamp: new Date().toISOString(),
+      })
+    }
+  }
+
+  const handleUpdateIngredientQuantity = (index: number, newQuantity: number) => {
+    if (!selectedMeal || !selectedMeal.ingredients || newQuantity <= 0) return
+
+    const updatedIngredients = [...selectedMeal.ingredients]
+    const oldQuantity = updatedIngredients[index].quantity
+    updatedIngredients[index] = {
+      ...updatedIngredients[index],
+      quantity: newQuantity,
+    }
+    setSelectedMeal({
+      ...selectedMeal,
+      ingredients: updatedIngredients,
+    })
+
+    // Send notification
+    const ingredient = updatedIngredients[index]
+    const notificationMessage = `${user?.name} updated meal "${selectedMeal.name}": ${ingredient.name} quantity changed to ${newQuantity} ${ingredient.unit}`
+
+    if (sendMessage) {
+      sendMessage({
+        type: "meal_updated",
+        message: notificationMessage,
+        user: { id: user?.id, name: user?.name, role: user?.role },
+        data: {
+          mealId: selectedMeal.id,
+          mealName: selectedMeal.name,
+          ingredientId: ingredient.ingredientId,
+          ingredientName: ingredient.name,
+          oldQuantity,
+          newQuantity,
+          unit: ingredient.unit,
+          updatedBy: user?.name,
+          updatedAt: new Date().toISOString(),
+        },
+        timestamp: new Date().toISOString(),
+      })
+    }
   }
 
   const startEditMeal = (meal: Meal) => {
@@ -324,6 +665,15 @@ export default function MealsPage() {
   const viewMealIngredients = (meal: Meal) => {
     setSelectedMeal(meal)
     setIsViewIngredientsDialogOpen(true)
+  }
+
+  const handleIngredientSelect = (ingredientId: number) => {
+    const inventoryItem = inventory.find((item) => item.id === ingredientId)
+    setNewIngredient({
+      ...newIngredient,
+      ingredientId,
+      unit: inventoryItem?.unit || "g",
+    })
   }
 
   const container = {
@@ -339,6 +689,34 @@ export default function MealsPage() {
   const item = {
     hidden: { opacity: 0, y: 20 },
     show: { opacity: 1, y: 0 },
+  }
+
+  if (isLoading) {
+    return (
+      <div className="container mx-auto py-6">
+        <div className="flex justify-center items-center h-64">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-amber-500 mx-auto mb-4"></div>
+            <p className="text-amber-700">Loading meals...</p>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="container mx-auto py-6">
+        <div className="bg-red-50 border border-red-200 rounded-md p-4 mb-6">
+          <h2 className="text-red-700 text-lg font-semibold mb-2">Error Loading Meals</h2>
+          <p className="text-red-600">{error}</p>
+          <p className="text-red-600 mt-2">Using sample data instead.</p>
+        </div>
+
+        {/* Rest of the component with sample data */}
+        {/* ... */}
+      </div>
+    )
   }
 
   return (
@@ -384,7 +762,6 @@ export default function MealsPage() {
                     className="col-span-3"
                   />
                 </div>
-
                 <div className="grid grid-cols-4 items-center gap-4">
                   <Label htmlFor="meal-description" className="text-right">
                     Description
@@ -396,7 +773,6 @@ export default function MealsPage() {
                     className="col-span-3"
                   />
                 </div>
-
                 <div className="border p-4 rounded-md border-amber-200">
                   <h3 className="font-medium mb-2 text-amber-700">Add Ingredients</h3>
                   <div className="grid grid-cols-12 gap-2 mb-4">
@@ -404,9 +780,9 @@ export default function MealsPage() {
                       <Label htmlFor="ingredient-select">Ingredient</Label>
                       <select
                         id="ingredient-select"
-                        className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                        className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                         value={newIngredient.ingredientId}
-                        onChange={(e) => setNewIngredient({ ...newIngredient, ingredientId: Number(e.target.value) })}
+                        onChange={(e) => handleIngredientSelect(Number(e.target.value))}
                       >
                         <option value={0}>Select ingredient</option>
                         {inventory.map((item) => (
@@ -421,6 +797,7 @@ export default function MealsPage() {
                       <Input
                         id="ingredient-quantity"
                         type="number"
+                        min="0"
                         value={newIngredient.quantity}
                         onChange={(e) => setNewIngredient({ ...newIngredient, quantity: Number(e.target.value) })}
                       />
@@ -438,7 +815,6 @@ export default function MealsPage() {
                       </Button>
                     </div>
                   </div>
-
                   <div className="mt-4">
                     <h4 className="font-medium mb-2 text-amber-700">Ingredients in this meal:</h4>
                     {newMeal.ingredients && newMeal.ingredients.length > 0 ? (
@@ -698,7 +1074,6 @@ export default function MealsPage() {
                   className="col-span-3"
                 />
               </div>
-
               <div className="grid grid-cols-4 items-center gap-4">
                 <Label htmlFor="edit-meal-description" className="text-right">
                   Description
@@ -710,7 +1085,6 @@ export default function MealsPage() {
                   className="col-span-3"
                 />
               </div>
-
               <div className="border p-4 rounded-md border-amber-200">
                 <h3 className="font-medium mb-2 text-amber-700">Ingredients</h3>
                 <div className="grid grid-cols-12 gap-2 mb-4">
@@ -718,9 +1092,9 @@ export default function MealsPage() {
                     <Label htmlFor="edit-ingredient-select">Ingredient</Label>
                     <select
                       id="edit-ingredient-select"
-                      className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                      className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                       value={newIngredient.ingredientId}
-                      onChange={(e) => setNewIngredient({ ...newIngredient, ingredientId: Number(e.target.value) })}
+                      onChange={(e) => handleIngredientSelect(Number(e.target.value))}
                     >
                       <option value={0}>Select ingredient</option>
                       {inventory.map((item) => (
@@ -735,6 +1109,7 @@ export default function MealsPage() {
                     <Input
                       id="edit-ingredient-quantity"
                       type="number"
+                      min="0"
                       value={newIngredient.quantity}
                       onChange={(e) => setNewIngredient({ ...newIngredient, quantity: Number(e.target.value) })}
                     />
@@ -746,22 +1121,98 @@ export default function MealsPage() {
                   <div className="col-span-2 flex items-end">
                     <Button
                       onClick={() => {
-                        if (!newIngredient.ingredientId || !newIngredient.quantity) return
+                        if (
+                          !newIngredient.ingredientId ||
+                          !newIngredient.quantity ||
+                          newIngredient.quantity <= 0 ||
+                          !user
+                        ) {
+                          toast({
+                            title: "Invalid Input",
+                            description: "Please select an ingredient and enter a valid quantity.",
+                            variant: "destructive",
+                          })
+                          return
+                        }
 
                         const inventoryItem = inventory.find((item) => item.id === newIngredient.ingredientId)
                         if (!inventoryItem) return
 
-                        const ingredientToAdd: MealIngredient = {
-                          ingredientId: newIngredient.ingredientId,
-                          name: inventoryItem.name,
-                          quantity: Number(newIngredient.quantity),
-                          unit: inventoryItem.unit,
-                        }
+                        // Check if ingredient already exists in the meal
+                        const existingIngredientIndex = selectedMeal.ingredients.findIndex(
+                          (ing) => ing.ingredientId === newIngredient.ingredientId,
+                        )
 
-                        setSelectedMeal({
-                          ...selectedMeal,
-                          ingredients: [...selectedMeal.ingredients, ingredientToAdd],
-                        })
+                        if (existingIngredientIndex >= 0) {
+                          // Update existing ingredient quantity
+                          const updatedIngredients = [...selectedMeal.ingredients]
+                          updatedIngredients[existingIngredientIndex] = {
+                            ...updatedIngredients[existingIngredientIndex],
+                            quantity:
+                              updatedIngredients[existingIngredientIndex].quantity + Number(newIngredient.quantity),
+                          }
+
+                          setSelectedMeal({
+                            ...selectedMeal,
+                            ingredients: updatedIngredients,
+                          })
+
+                          // Send notification
+                          const notificationMessage = `${user.name} updated ingredient "${inventoryItem.name}" quantity to ${updatedIngredients[existingIngredientIndex].quantity} ${inventoryItem.unit} in meal "${selectedMeal.name}"`
+
+                          if (sendMessage) {
+                            sendMessage({
+                              type: "meal_updated",
+                              message: notificationMessage,
+                              user: { id: user.id, name: user.name, role: user.role },
+                              data: {
+                                mealId: selectedMeal.id,
+                                mealName: selectedMeal.name,
+                                updatedIngredient: updatedIngredients[existingIngredientIndex],
+                                updatedBy: user.name,
+                                updatedAt: new Date().toISOString(),
+                              },
+                              timestamp: new Date().toISOString(),
+                            })
+                          }
+
+                          toast({
+                            title: "Ingredient Updated",
+                            description: `Updated ${inventoryItem.name} quantity in the meal.`,
+                          })
+                        } else {
+                          // Add new ingredient
+                          const ingredientToAdd: MealIngredient = {
+                            ingredientId: newIngredient.ingredientId,
+                            name: inventoryItem.name,
+                            quantity: Number(newIngredient.quantity),
+                            unit: inventoryItem.unit,
+                          }
+
+                          setSelectedMeal({
+                            ...selectedMeal,
+                            ingredients: [...selectedMeal.ingredients, ingredientToAdd],
+                          })
+
+                          // Send notification
+                          const notificationMessage = `${user.name} added ingredient "${inventoryItem.name}": ${newIngredient.quantity} ${newIngredient.unit} to meal "${selectedMeal.name}"`
+
+                          if (sendMessage) {
+                            sendMessage({
+                              type: "meal_updated",
+                              message: notificationMessage,
+                              user: { id: user.id, name: user.name, role: user.role },
+                              data: {
+                                mealId: selectedMeal.id,
+                                mealName: selectedMeal.name,
+                                addedIngredient: ingredientToAdd,
+                                updatedBy: user.name,
+                                updatedAt: new Date().toISOString(),
+                              },
+                              timestamp: new Date().toISOString(),
+                            })
+                          }
+                        }
 
                         setNewIngredient({
                           ingredientId: 0,
@@ -776,7 +1227,6 @@ export default function MealsPage() {
                     </Button>
                   </div>
                 </div>
-
                 <div className="mt-4">
                   <h4 className="font-medium mb-2 text-amber-700">Current ingredients:</h4>
                   <Table>
@@ -792,7 +1242,15 @@ export default function MealsPage() {
                       {selectedMeal.ingredients.map((ingredient, index) => (
                         <TableRow key={index}>
                           <TableCell>{ingredient.name}</TableCell>
-                          <TableCell>{ingredient.quantity}</TableCell>
+                          <TableCell>
+                            <Input
+                              type="number"
+                              min="0"
+                              value={ingredient.quantity}
+                              onChange={(e) => handleUpdateIngredientQuantity(index, Number(e.target.value))}
+                              className="w-20"
+                            />
+                          </TableCell>
                           <TableCell>{ingredient.unit}</TableCell>
                           <TableCell>
                             <Button

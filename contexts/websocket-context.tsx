@@ -75,7 +75,6 @@ export function WebSocketProvider({
     const setupMockMode = () => {
       mockMode = true
       setConnectionType("mock")
-      setConnected(true)
       console.log("Using mock WebSocket mode")
     }
 

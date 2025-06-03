@@ -98,7 +98,7 @@ class Ingredient(Base):
     created_by = Column(Integer, ForeignKey("users.id"))
     
     meal_ingredients = relationship("MealIngredient", back_populates="ingredient")
-    deliveries = relationship("IngredientDelivery", back_populates="ingredient")
+    deliveries = relationship("IngredientDelivery", back_populates="deliveries")
     orders = relationship("Order", back_populates="ingredient")
 
 class IngredientDelivery(Base):
@@ -931,7 +931,7 @@ async def update_meal(meal_id: int, meal: MealUpdate, db: Session = Depends(get_
     
     return response_meal
 
-@app.delete("/meals/{meal_id}", response_model=MealResponse)
+@app.delete("/meals/{meal_id}")
 async def delete_meal(meal_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     if current_user.role not in [UserRole.ADMIN, UserRole.COOK]:
         raise HTTPException(status_code=403, detail="Not authorized to delete meals")
@@ -977,9 +977,10 @@ async def delete_meal(meal_id: int, db: Session = Depends(get_db), current_user:
         }
     }))
     
-    return response_meal
+    return {"message": "Meal deleted successfully"}
 
 # Meal Serving Routes
+
 @app.post("/meal-servings/", response_model=MealServingResponse)
 async def create_meal_serving(serving: MealServingCreate, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     if current_user.role not in [UserRole.ADMIN, UserRole.COOK]:
@@ -989,7 +990,6 @@ async def create_meal_serving(serving: MealServingCreate, db: Session = Depends(
     if not db_meal:
         raise HTTPException(status_code=404, detail="Meal not found")
     
-    # Check if we have enough ingredients
     for meal_ingredient in db_meal.meal_ingredients:
         ingredient = db.query(Ingredient).filter(Ingredient.id == meal_ingredient.ingredient_id).first()
         required_quantity = meal_ingredient.quantity * serving.portions
@@ -999,9 +999,7 @@ async def create_meal_serving(serving: MealServingCreate, db: Session = Depends(
                 status_code=400, 
                 detail=f"Not enough {ingredient.name} in stock. Need {required_quantity} {ingredient.unit}, but have {ingredient.quantity} {ingredient.unit}"
             )
-    
-    # Deduct ingredients from inventory
-    for meal_ingredient in db_meal.meal_ingredients:
+        for meal_ingredient in db_meal.meal_ingredients:
         ingredient = db.query(Ingredient).filter(Ingredient.id == meal_ingredient.ingredient_id).first()
         required_quantity = meal_ingredient.quantity * serving.portions
         
@@ -1011,7 +1009,6 @@ async def create_meal_serving(serving: MealServingCreate, db: Session = Depends(
         elif ingredient.quantity <= ingredient.threshold:
             ingredient.status = IngredientStatus.LOW
     
-    # Create meal serving
     db_serving = MealServing(
         meal_id=serving.meal_id,
         portions=serving.portions,
@@ -1021,9 +1018,7 @@ async def create_meal_serving(serving: MealServingCreate, db: Session = Depends(
     db.add(db_serving)
     db.commit()
     db.refresh(db_serving)
-    
-    # Notify via WebSocket
-    await manager.broadcast(json.dumps({
+        await manager.broadcast(json.dumps({
         "type": "meal_served",
         "data": {
             "id": db_serving.id,
@@ -1403,13 +1398,14 @@ async def root():
 # Include routers
 from .database import engine, Base
 from .models.models import *
-from .routers import auth, users, ingredients, notifications
+from .routers import auth, users, ingredients, notifications, meals
 from .websocket import manager
 
 app.include_router(auth.router)
 app.include_router(users.router)
 app.include_router(ingredients.router)
 app.include_router(notifications.router)
+app.include_router(meals.router)
 
 # Main entry point
 if __name__ == "__main__":

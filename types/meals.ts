@@ -8,7 +8,7 @@ export interface MealIngredient {
 export interface Meal {
   id: number
   name: string
-  description?: string
+  description: string
   ingredients: MealIngredient[]
   imageUrl?: string
 }
@@ -18,7 +18,7 @@ export interface MealServing {
   mealId: number
   mealName: string
   portions: number
-  servedBy: string
-  servedAt: string
+  servingDate: string
   userId: number
+  userName: string
 }
