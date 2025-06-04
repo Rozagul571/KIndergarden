@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { DateRangePicker } from "@/components/date-range-picker"
 import { format } from "date-fns"
-import { Download, Search, Utensils, User, Calendar, Clock } from "lucide-react"
+import { Download, Search, Utensils, User, Calendar, Clock, Package, Edit, Plus } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { useWebSocket } from "@/contexts/websocket-context"
 import { motion } from "framer-motion"
@@ -40,6 +40,9 @@ export default function TrackingPage() {
   const [roleFilter, setRoleFilter] = useState("all")
   const { toast } = useToast()
   const { lastMessage } = useWebSocket()
+
+  // Add this new state for ingredient changes
+  const [ingredientChanges, setIngredientChanges] = useState<any[]>([])
 
   // Fetch meal servings data
   useEffect(() => {
@@ -158,6 +161,31 @@ export default function TrackingPage() {
       // For now, we'll just show a toast
       toast({
         title: "New Meal Served",
+        description: lastMessage.message,
+      })
+    }
+  }, [lastMessage, toast])
+
+  // Add this useEffect to listen for ingredient changes
+  useEffect(() => {
+    if (
+      lastMessage &&
+      (lastMessage.type === "ingredient_quantity_updated" ||
+        lastMessage.type === "ingredient_added_to_meal" ||
+        lastMessage.type === "meal_updated_comprehensive")
+    ) {
+      const newChange = {
+        id: Date.now(),
+        type: lastMessage.type,
+        user: lastMessage.user,
+        data: lastMessage.data,
+        timestamp: lastMessage.timestamp || new Date().toISOString(),
+      }
+
+      setIngredientChanges((prev) => [newChange, ...prev])
+
+      toast({
+        title: "Ingredient Update Tracked",
         description: lastMessage.message,
       })
     }
@@ -366,6 +394,119 @@ export default function TrackingPage() {
                           <span className="text-amber-800 font-medium">{serving.portions} portions served</span>
                         </div>
                         <div className="text-gray-500 text-sm">ID: #{serving.id}</div>
+                      </div>
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card className="mt-6">
+          <CardHeader>
+            <CardTitle className="flex items-center">
+              <Package className="mr-2 h-5 w-5" />
+              Real-time Ingredient Changes
+            </CardTitle>
+            <CardDescription>Live tracking of ingredient modifications and meal updates</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {ingredientChanges.length === 0 ? (
+              <div className="text-center py-8">
+                <Package className="mx-auto h-12 w-12 text-gray-300" />
+                <h3 className="mt-4 text-lg font-medium text-gray-900">No ingredient changes yet</h3>
+                <p className="mt-2 text-gray-500">Ingredient modifications will appear here in real-time</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {ingredientChanges.slice(0, 10).map((change, index) => (
+                  <motion.div
+                    key={change.id}
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: index * 0.1 }}
+                    className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-4"
+                  >
+                    <div className="flex items-start justify-between">
+                      <div className="flex items-start space-x-3">
+                        <div className="bg-blue-100 p-2 rounded-full">
+                          {change.type === "ingredient_quantity_updated" ? (
+                            <Edit className="h-4 w-4 text-blue-600" />
+                          ) : change.type === "ingredient_added_to_meal" ? (
+                            <Plus className="h-4 w-4 text-green-600" />
+                          ) : (
+                            <Utensils className="h-4 w-4 text-purple-600" />
+                          )}
+                        </div>
+                        <div className="flex-1">
+                          <div className="flex items-center space-x-2 mb-1">
+                            <span className="font-semibold text-gray-900">{change.user?.name || "Unknown User"}</span>
+                            <Badge className="bg-blue-100 text-blue-800 text-xs">{change.user?.role || "user"}</Badge>
+                          </div>
+
+                          {change.type === "ingredient_quantity_updated" && (
+                            <div className="text-sm text-gray-700">
+                              <p className="font-medium">
+                                {change.data?.changeType === "increased" ? "Increased" : "Decreased"}{" "}
+                                {change.data?.ingredientName}
+                              </p>
+                              <p>
+                                In meal: <span className="font-medium">{change.data?.mealName}</span>
+                              </p>
+                              <p>
+                                Change:{" "}
+                                <span className="font-mono bg-gray-100 px-1 rounded">
+                                  {change.data?.oldQuantity} → {change.data?.newQuantity} {change.data?.unit}
+                                </span>
+                              </p>
+                              <p>
+                                Amount:{" "}
+                                <span className="font-medium text-blue-600">
+                                  {change.data?.changeAmount} {change.data?.unit}
+                                </span>
+                              </p>
+                            </div>
+                          )}
+
+                          {change.type === "ingredient_added_to_meal" && (
+                            <div className="text-sm text-gray-700">
+                              <p className="font-medium">Added {change.data?.ingredientName} to meal</p>
+                              <p>
+                                Meal: <span className="font-medium">{change.data?.mealName}</span>
+                              </p>
+                              <p>
+                                Quantity:{" "}
+                                <span className="font-mono bg-gray-100 px-1 rounded">
+                                  {change.data?.quantity} {change.data?.unit}
+                                </span>
+                              </p>
+                              <p>
+                                Stock available:{" "}
+                                <span className="text-green-600">
+                                  {change.data?.availableStock} {change.data?.unit}
+                                </span>
+                              </p>
+                            </div>
+                          )}
+
+                          {change.type === "meal_updated_comprehensive" && (
+                            <div className="text-sm text-gray-700">
+                              <p className="font-medium">Updated meal recipe</p>
+                              <p>
+                                Meal: <span className="font-medium">{change.data?.mealName}</span>
+                              </p>
+                              <p>
+                                Total ingredients:{" "}
+                                <span className="font-medium text-purple-600">{change.data?.totalIngredients}</span>
+                              </p>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                      <div className="text-right text-xs text-gray-500">
+                        <div>{format(new Date(change.timestamp), "MMM dd, yyyy")}</div>
+                        <div>{format(new Date(change.timestamp), "hh:mm:ss a")}</div>
                       </div>
                     </div>
                   </motion.div>

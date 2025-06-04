@@ -16,16 +16,15 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog"
 import { Badge } from "@/components/ui/badge"
-import { Edit, Plus, Trash } from "lucide-react"
+import { Edit, Plus, Trash, Check, AlertCircle, Package, Utensils } from "lucide-react"
 import type { Meal, MealIngredient } from "@/types/meals"
 import type { InventoryItem } from "@/types/inventory"
 import Link from "next/link"
 import { motion } from "framer-motion"
 import { useWebSocket } from "@/contexts/websocket-context"
 import { useToast } from "@/hooks/use-toast"
-import { useAuth } from "@/hooks/use-auth"
 
-// Sample inventory data (ideally fetched from backend)
+// Sample data for demonstration
 const initialInventory: InventoryItem[] = [
   { id: 1, name: "Beef", quantity: 5000, unit: "g", deliveryDate: "2025-05-10", threshold: 1000, status: "Available" },
   {
@@ -100,48 +99,83 @@ const initialInventory: InventoryItem[] = [
   },
 ]
 
-// Sample meals data for development/testing
-const sampleMeals: Meal[] = [
+const initialMeals: Meal[] = [
   {
     id: 1,
-    name: "Beef Stew",
-    description: "Hearty beef stew with vegetables",
+    name: "Osh (Plov)",
+    description: "Traditional Uzbek rice dish with meat and vegetables",
     ingredients: [
-      { ingredientId: 1, name: "Beef", quantity: 200, unit: "g" },
-      { ingredientId: 2, name: "Potato", quantity: 100, unit: "g" },
+      { ingredientId: 5, name: "Rice", quantity: 100, unit: "g" },
+      { ingredientId: 1, name: "Beef", quantity: 80, unit: "g" },
       { ingredientId: 6, name: "Carrot", quantity: 50, unit: "g" },
       { ingredientId: 7, name: "Onion", quantity: 30, unit: "g" },
+      { ingredientId: 3, name: "Salt", quantity: 3, unit: "g" },
+      { ingredientId: 14, name: "Cumin", quantity: 2, unit: "g" },
+      { ingredientId: 10, name: "Water", quantity: 200, unit: "ml" },
     ],
-    imageUrl: "/placeholder.svg?height=100&width=100",
+    imageUrl: "https://www.orexca.com/img/cuisine/plov/uzbek-pilaf.jpg",
   },
   {
     id: 2,
-    name: "Chicken Soup",
-    description: "Nutritious chicken soup",
+    name: "Lagman",
+    description: "Uzbek noodle soup with meat and vegetables",
     ingredients: [
-      { ingredientId: 4, name: "Chicken", quantity: 150, unit: "g" },
+      { ingredientId: 12, name: "Noodles", quantity: 120, unit: "g" },
+      { ingredientId: 1, name: "Beef", quantity: 70, unit: "g" },
       { ingredientId: 6, name: "Carrot", quantity: 40, unit: "g" },
-      { ingredientId: 7, name: "Onion", quantity: 25, unit: "g" },
-      { ingredientId: 10, name: "Water", quantity: 500, unit: "ml" },
+      { ingredientId: 7, name: "Onion", quantity: 30, unit: "g" },
+      { ingredientId: 15, name: "Bell Pepper", quantity: 30, unit: "g" },
+      { ingredientId: 8, name: "Tomato", quantity: 50, unit: "g" },
+      { ingredientId: 3, name: "Salt", quantity: 3, unit: "g" },
+      { ingredientId: 10, name: "Water", quantity: 300, unit: "ml" },
     ],
-    imageUrl: "/placeholder.svg?height=100&width=100",
+    imageUrl: "https://t4.ftcdn.net/jpg/02/31/48/03/360_F_231480324_BqyB5EmbS8LQg2uPF9SZHLovPQK8MfuO.jpg",
   },
   {
     id: 3,
-    name: "Vegetable Rice",
-    description: "Healthy vegetable rice",
+    name: "Somsa",
+    description: "Baked pastry with meat filling",
     ingredients: [
-      { ingredientId: 5, name: "Rice", quantity: 80, unit: "g" },
-      { ingredientId: 6, name: "Carrot", quantity: 30, unit: "g" },
-      { ingredientId: 8, name: "Tomato", quantity: 40, unit: "g" },
-      { ingredientId: 15, name: "Bell Pepper", quantity: 25, unit: "g" },
+      { ingredientId: 9, name: "Flour", quantity: 80, unit: "g" },
+      { ingredientId: 11, name: "Lamb", quantity: 60, unit: "g" },
+      { ingredientId: 7, name: "Onion", quantity: 20, unit: "g" },
+      { ingredientId: 3, name: "Salt", quantity: 2, unit: "g" },
+      { ingredientId: 14, name: "Cumin", quantity: 1, unit: "g" },
     ],
-    imageUrl: "/placeholder.svg?height=100&width=100",
+    imageUrl: "https://www.gazeta.uz/media/img/2023/10/0kTVoA16984691510527_l.jpg",
+  },
+  {
+    id: 4,
+    name: "Manti",
+    description: "Steamed dumplings with meat and onions",
+    ingredients: [
+      { ingredientId: 9, name: "Flour", quantity: 70, unit: "g" },
+      { ingredientId: 11, name: "Lamb", quantity: 50, unit: "g" },
+      { ingredientId: 7, name: "Onion", quantity: 30, unit: "g" },
+      { ingredientId: 3, name: "Salt", quantity: 2, unit: "g" },
+      { ingredientId: 10, name: "Water", quantity: 20, unit: "ml" },
+    ],
+    imageUrl: "https://image.essen-und-trinken.de/13122998/t/au/v5/w960/r1/-/adobestock-148423716-alju.jpg",
+  },
+  {
+    id: 5,
+    name: "Shurpa",
+    description: "Traditional Uzbek soup with meat and vegetables",
+    ingredients: [
+      { ingredientId: 11, name: "Lamb", quantity: 80, unit: "g" },
+      { ingredientId: 2, name: "Potato", quantity: 70, unit: "g" },
+      { ingredientId: 6, name: "Carrot", quantity: 40, unit: "g" },
+      { ingredientId: 7, name: "Onion", quantity: 30, unit: "g" },
+      { ingredientId: 8, name: "Tomato", quantity: 40, unit: "g" },
+      { ingredientId: 3, name: "Salt", quantity: 3, unit: "g" },
+      { ingredientId: 10, name: "Water", quantity: 400, unit: "ml" },
+    ],
+    imageUrl: "https://recipesfriend.com/uploads/recipeimg/1575394112lamb_veg_soup_shurpa%20(2).jpg",
   },
 ]
 
 export default function MealsPage() {
-  const [meals, setMeals] = useState<Meal[]>([])
+  const [meals, setMeals] = useState<Meal[]>(initialMeals)
   const [inventory] = useState<InventoryItem[]>(initialInventory)
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
@@ -159,72 +193,15 @@ export default function MealsPage() {
     quantity: 0,
     unit: "g",
   })
-  const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
 
   const { toast } = useToast()
   const { sendMessage } = useWebSocket()
-  const { user, isAuthenticated } = useAuth()
 
-  // Fetch meals from backend on mount
   useEffect(() => {
-    async function fetchMeals() {
-      setIsLoading(true)
-      setError(null)
-      try {
-        // For development/testing, use sample data if API is not available
-        if (process.env.NODE_ENV === "development" && process.env.NEXT_PUBLIC_USE_MOCK_DATA === "true") {
-          console.log("Using sample meals data")
-          setMeals(sampleMeals)
-          setIsLoading(false)
-          return
-        }
-
-        let token = null
-        if (isAuthenticated && user) {
-          token = localStorage.getItem("token")
-        }
-
-        const response = await fetch(`/api/meals?token=${token}`)
-        if (!response.ok) {
-          const errorText = await response.text()
-          console.error("Error response:", errorText)
-          throw new Error(`Failed to fetch meals: ${response.status} ${response.statusText}`)
-        }
-
-        const contentType = response.headers.get("content-type")
-        if (!contentType || !contentType.includes("application/json")) {
-          const text = await response.text()
-          console.error("Non-JSON response:", text)
-          throw new Error("Server did not return JSON")
-        }
-
-        const data = await response.json()
-        console.log("Fetched meals:", data)
-        setMeals(data)
-      } catch (error) {
-        console.error("Error fetching meals:", error)
-        setError(error instanceof Error ? error.message : "Failed to load meals")
-        toast({
-          title: "Error",
-          description: "Failed to load meals from the backend.",
-          variant: "destructive",
-        })
-
-        // Fallback to sample data in case of error
-        console.log("Using fallback sample meals data")
-        setMeals(sampleMeals)
-      } finally {
-        setIsLoading(false)
-      }
-    }
-
-    fetchMeals()
-
     if (sendMessage) {
       sendMessage(JSON.stringify({ type: "meals_page_viewed" }))
     }
-  }, [sendMessage, toast, isAuthenticated, user])
+  }, [sendMessage])
 
   const calculatePossiblePortions = (meal: Meal): number => {
     if (!meal.ingredients.length) return 0
@@ -240,143 +217,50 @@ export default function MealsPage() {
     )
   }
 
-  const handleAddMeal = async () => {
-    if (!newMeal.name || !newMeal.ingredients?.length || !user) return
+  const handleAddMeal = () => {
+    if (!newMeal.name || !newMeal.ingredients?.length) return
 
-    try {
-      const mealToAdd: Meal = {
-        id: Math.max(0, ...meals.map((meal) => meal.id)) + 1,
-        name: newMeal.name,
-        description: newMeal.description || "",
-        ingredients: newMeal.ingredients as MealIngredient[],
-        imageUrl: newMeal.imageUrl || "/placeholder.svg?height=100&width=100",
-      }
-
-      // Optimistically update UI
-      setMeals([...meals, mealToAdd])
-
-      // Send notification
-      const ingredientsList = mealToAdd.ingredients.map((ing) => `${ing.name}: ${ing.quantity} ${ing.unit}`).join(", ")
-      const notificationMessage = `${user.name} added new meal "${mealToAdd.name}" with ingredients: ${ingredientsList}`
-
-      if (sendMessage) {
-        sendMessage({
-          type: "meal_added",
-          message: notificationMessage,
-          user: { id: user.id, name: user.name, role: user.role },
-          data: {
-            mealId: mealToAdd.id,
-            mealName: mealToAdd.name,
-            description: mealToAdd.description,
-            ingredients: mealToAdd.ingredients,
-            createdBy: user.name,
-            createdAt: new Date().toISOString(),
-          },
-          timestamp: new Date().toISOString(),
-        })
-      }
-
-      // Reset form
-      setNewMeal({
-        name: "",
-        description: "",
-        ingredients: [],
-        imageUrl: "/placeholder.svg?height=100&width=100",
-      })
-      setIsAddDialogOpen(false)
-
-      toast({
-        title: "Meal Added",
-        description: "The meal has been successfully added.",
-      })
-
-      // Call backend API to save meal
-      const response = await fetch("/api/meals", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: mealToAdd.name,
-          description: mealToAdd.description,
-          image_url: mealToAdd.imageUrl,
-          ingredients: mealToAdd.ingredients.map((ing) => ({
-            ingredientId: ing.ingredientId,
-            name: ing.name,
-            quantity: ing.quantity,
-            unit: ing.unit,
-          })),
-        }),
-      })
-
-      if (!response.ok) {
-        const errorText = await response.text()
-        console.error("Error saving meal:", errorText)
-        throw new Error("Failed to save meal")
-      }
-
-      // Refresh meals list after successful save
-      const updatedResponse = await fetch("/api/meals")
-      if (updatedResponse.ok) {
-        const updatedData = await updatedResponse.json()
-        setMeals(updatedData)
-      }
-    } catch (error) {
-      console.error("Error saving meal:", error)
-      toast({
-        title: "Error",
-        description: "Failed to save meal to the backend.",
-        variant: "destructive",
-      })
+    const newId = Math.max(0, ...meals.map((meal) => meal.id)) + 1
+    const mealToAdd: Meal = {
+      id: newId,
+      name: newMeal.name,
+      description: newMeal.description || "",
+      ingredients: newMeal.ingredients as MealIngredient[],
+      imageUrl: newMeal.imageUrl || "/placeholder.svg?height=100&width=100",
     }
+
+    setMeals([...meals, mealToAdd])
+    setNewMeal({
+      name: "",
+      description: "",
+      ingredients: [],
+      imageUrl: "/placeholder.svg?height=100&width=100",
+    })
+    setIsAddDialogOpen(false)
+
+    toast({
+      title: "Meal Added",
+      description: "The meal has been successfully added.",
+    })
   }
 
   const handleAddIngredientToMeal = () => {
-    if (!newIngredient.ingredientId || !newIngredient.quantity || newIngredient.quantity <= 0) {
-      toast({
-        title: "Invalid Input",
-        description: "Please select an ingredient and enter a valid quantity.",
-        variant: "destructive",
-      })
-      return
-    }
+    if (!newIngredient.ingredientId || !newIngredient.quantity) return
 
     const inventoryItem = inventory.find((item) => item.id === newIngredient.ingredientId)
     if (!inventoryItem) return
 
-    // Check if ingredient already exists in the meal
-    const existingIngredientIndex =
-      newMeal.ingredients?.findIndex((ing) => ing.ingredientId === newIngredient.ingredientId) ?? -1
-
-    if (existingIngredientIndex >= 0 && newMeal.ingredients) {
-      // Update existing ingredient quantity
-      const updatedIngredients = [...newMeal.ingredients]
-      updatedIngredients[existingIngredientIndex] = {
-        ...updatedIngredients[existingIngredientIndex],
-        quantity: (updatedIngredients[existingIngredientIndex].quantity || 0) + Number(newIngredient.quantity),
-      }
-
-      setNewMeal({
-        ...newMeal,
-        ingredients: updatedIngredients,
-      })
-
-      toast({
-        title: "Ingredient Updated",
-        description: `Updated ${inventoryItem.name} quantity in the meal.`,
-      })
-    } else {
-      // Add new ingredient
-      const ingredientToAdd: MealIngredient = {
-        ingredientId: newIngredient.ingredientId,
-        name: inventoryItem.name,
-        quantity: Number(newIngredient.quantity),
-        unit: inventoryItem.unit,
-      }
-
-      setNewMeal({
-        ...newMeal,
-        ingredients: [...(newMeal.ingredients || []), ingredientToAdd],
-      })
+    const ingredientToAdd: MealIngredient = {
+      ingredientId: newIngredient.ingredientId,
+      name: inventoryItem.name,
+      quantity: Number(newIngredient.quantity),
+      unit: inventoryItem.unit,
     }
+
+    setNewMeal({
+      ...newMeal,
+      ingredients: [...(newMeal.ingredients || []), ingredientToAdd],
+    })
 
     setNewIngredient({
       ingredientId: 0,
@@ -386,275 +270,70 @@ export default function MealsPage() {
     })
   }
 
-  const handleUpdateMeal = async () => {
-    if (!selectedMeal || !user) return
+  const handleUpdateMeal = () => {
+    if (!selectedMeal) return
 
-    try {
-      // Find the original meal to compare changes
-      const originalMeal = meals.find((meal) => meal.id === selectedMeal.id)
-      if (!originalMeal) return
+    const updatedMeals = meals.map((meal) => (meal.id === selectedMeal.id ? selectedMeal : meal))
 
-      // Update meals state
-      const updatedMeals = meals.map((meal) => (meal.id === selectedMeal.id ? selectedMeal : meal))
-      setMeals(updatedMeals)
+    setMeals(updatedMeals)
 
-      // Detect changes
-      const changes: string[] = []
-      if (originalMeal.name !== selectedMeal.name) {
-        changes.push(`name changed to "${selectedMeal.name}"`)
-      }
-      if (originalMeal.description !== selectedMeal.description) {
-        changes.push(`description updated`)
-      }
-
-      // Compare ingredients
-      const originalIngredients = originalMeal.ingredients.reduce(
-        (acc, ing) => ({ ...acc, [ing.ingredientId]: ing.quantity }),
-        {} as Record<number, number>,
-      )
-      const updatedIngredients = selectedMeal.ingredients.reduce(
-        (acc, ing) => ({ ...acc, [ing.ingredientId]: ing.quantity }),
-        {} as Record<number, number>,
-      )
-
-      selectedMeal.ingredients.forEach((ing) => {
-        const originalQty = originalIngredients[ing.ingredientId] || 0
-        if (originalQty === 0) {
-          changes.push(`added ${ing.name}: ${ing.quantity} ${ing.unit}`)
-        } else if (ing.quantity !== originalQty) {
-          changes.push(`${ing.name} quantity changed to ${ing.quantity} ${ing.unit}`)
-        }
-      })
-
-      // Check for removed ingredients
-      originalMeal.ingredients.forEach((ing) => {
-        if (!updatedIngredients[ing.ingredientId]) {
-          changes.push(`removed ${ing.name}`)
-        }
-      })
-
-      // Send notification
-      const notificationMessage = changes.length
-        ? `${user.name} updated meal "${selectedMeal.name}": ${changes.join(", ")}`
-        : `${user.name} updated meal "${selectedMeal.name}"`
-
-      if (sendMessage) {
-        sendMessage({
-          type: "meal_updated",
-          message: notificationMessage,
-          user: { id: user.id, name: user.name, role: user.role },
-          data: {
-            mealId: selectedMeal.id,
-            mealName: selectedMeal.name,
-            changes,
-            updatedBy: user.name,
-            updatedAt: new Date().toISOString(),
-          },
-          timestamp: new Date().toISOString(),
-        })
-      }
-
-      setSelectedMeal(null)
-      setIsEditDialogOpen(false)
-
-      toast({
-        title: "Meal Updated",
-        description: "The meal has been successfully updated.",
-      })
-
-      // Call backend API to update meal
-      const response = await fetch(`/api/meals/${selectedMeal.id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: selectedMeal.name,
-          description: selectedMeal.description,
-          image_url: selectedMeal.imageUrl,
+    // Send detailed notification about meal update
+    if (sendMessage) {
+      sendMessage({
+        type: "meal_updated_comprehensive",
+        message: `Updated meal recipe: ${selectedMeal.name}`,
+        data: {
+          mealId: selectedMeal.id,
+          mealName: selectedMeal.name,
+          totalIngredients: selectedMeal.ingredients.length,
           ingredients: selectedMeal.ingredients.map((ing) => ({
-            ingredientId: ing.ingredientId,
             name: ing.name,
             quantity: ing.quantity,
             unit: ing.unit,
           })),
-        }),
-      })
-
-      if (!response.ok) {
-        const errorText = await response.text()
-        console.error("Error updating meal:", errorText)
-        throw new Error("Failed to update meal")
-      }
-
-      // Refresh meals list after successful update
-      const updatedResponse = await fetch("/api/meals")
-      if (updatedResponse.ok) {
-        const updatedData = await updatedResponse.json()
-        setMeals(updatedData)
-      }
-    } catch (error) {
-      console.error("Error updating meal:", error)
-      toast({
-        title: "Error",
-        description: "Failed to update meal in the backend.",
-        variant: "destructive",
+          updatedAt: new Date().toISOString(),
+        },
       })
     }
+
+    setSelectedMeal(null)
+    setIsEditDialogOpen(false)
+
+    toast({
+      title: "Meal Updated Successfully",
+      description: `${selectedMeal.name} has been updated with ${selectedMeal.ingredients.length} ingredients.`,
+    })
   }
 
-  const handleDeleteMeal = async (id: number) => {
-    const mealToDelete = meals.find((meal) => meal.id === id)
-    if (!mealToDelete || !user) return
+  const handleDeleteMeal = (id: number) => {
+    setMeals(meals.filter((meal) => meal.id !== id))
 
-    try {
-      // Optimistically update UI
-      setMeals(meals.filter((meal) => meal.id !== id))
-
-      // Send notification
-      const notificationMessage = `${user.name} deleted meal "${mealToDelete.name}"`
-
-      if (sendMessage) {
-        sendMessage({
-          type: "meal_deleted",
-          message: notificationMessage,
-          user: { id: user.id, name: user.name, role: user.role },
-          data: {
-            mealId: mealToDelete.id,
-            mealName: mealToDelete.name,
-            deletedBy: user.name,
-            deletedAt: new Date().toISOString(),
-          },
-          timestamp: new Date().toISOString(),
-        })
-      }
-
-      toast({
-        title: "Meal Deleted",
-        description: "The meal has been successfully deleted.",
-      })
-
-      // Call backend API to delete meal
-      const response = await fetch(`/api/meals/${id}`, {
-        method: "DELETE",
-      })
-
-      if (!response.ok) {
-        const errorText = await response.text()
-        console.error("Error deleting meal:", errorText)
-        throw new Error("Failed to delete meal")
-      }
-    } catch (error) {
-      console.error("Error deleting meal:", error)
-      toast({
-        title: "Error",
-        description: "Failed to delete meal from the backend.",
-        variant: "destructive",
-      })
-
-      // Restore the deleted meal in case of error
-      if (mealToDelete) {
-        setMeals([...meals.filter((meal) => meal.id !== id), mealToDelete])
-      }
-    }
+    toast({
+      title: "Meal Deleted",
+      description: "The meal has been successfully deleted.",
+    })
   }
 
   const handleRemoveIngredientFromMeal = (index: number) => {
-    if (!newMeal.ingredients || !user) return
+    if (!newMeal.ingredients) return
 
-    const removedIngredient = newMeal.ingredients[index]
     const updatedIngredients = [...newMeal.ingredients]
     updatedIngredients.splice(index, 1)
     setNewMeal({
       ...newMeal,
       ingredients: updatedIngredients,
     })
-
-    // Send notification
-    const notificationMessage = `${user.name} removed ingredient "${removedIngredient.name}" from new meal "${newMeal.name || "Untitled"}"`
-
-    if (sendMessage) {
-      sendMessage({
-        type: "meal_updated",
-        message: notificationMessage,
-        user: { id: user.id, name: user.name, role: user.role },
-        data: {
-          mealName: newMeal.name || "Untitled",
-          removedIngredient,
-          updatedBy: user.name,
-          updatedAt: new Date().toISOString(),
-        },
-        timestamp: new Date().toISOString(),
-      })
-    }
   }
 
   const handleRemoveIngredientFromSelectedMeal = (index: number) => {
-    if (!selectedMeal || !selectedMeal.ingredients || !user) return
+    if (!selectedMeal || !selectedMeal.ingredients) return
 
-    const removedIngredient = selectedMeal.ingredients[index]
     const updatedIngredients = [...selectedMeal.ingredients]
     updatedIngredients.splice(index, 1)
     setSelectedMeal({
       ...selectedMeal,
       ingredients: updatedIngredients,
     })
-
-    // Send notification
-    const notificationMessage = `${user.name} removed ingredient "${removedIngredient.name}" from meal "${selectedMeal.name}"`
-
-    if (sendMessage) {
-      sendMessage({
-        type: "meal_updated",
-        message: notificationMessage,
-        user: { id: user.id, name: user.name, role: user.role },
-        data: {
-          mealId: selectedMeal.id,
-          mealName: selectedMeal.name,
-          removedIngredient,
-          updatedBy: user.name,
-          updatedAt: new Date().toISOString(),
-        },
-        timestamp: new Date().toISOString(),
-      })
-    }
-  }
-
-  const handleUpdateIngredientQuantity = (index: number, newQuantity: number) => {
-    if (!selectedMeal || !selectedMeal.ingredients || newQuantity <= 0) return
-
-    const updatedIngredients = [...selectedMeal.ingredients]
-    const oldQuantity = updatedIngredients[index].quantity
-    updatedIngredients[index] = {
-      ...updatedIngredients[index],
-      quantity: newQuantity,
-    }
-    setSelectedMeal({
-      ...selectedMeal,
-      ingredients: updatedIngredients,
-    })
-
-    // Send notification
-    const ingredient = updatedIngredients[index]
-    const notificationMessage = `${user?.name} updated meal "${selectedMeal.name}": ${ingredient.name} quantity changed to ${newQuantity} ${ingredient.unit}`
-
-    if (sendMessage) {
-      sendMessage({
-        type: "meal_updated",
-        message: notificationMessage,
-        user: { id: user?.id, name: user?.name, role: user?.role },
-        data: {
-          mealId: selectedMeal.id,
-          mealName: selectedMeal.name,
-          ingredientId: ingredient.ingredientId,
-          ingredientName: ingredient.name,
-          oldQuantity,
-          newQuantity,
-          unit: ingredient.unit,
-          updatedBy: user?.name,
-          updatedAt: new Date().toISOString(),
-        },
-        timestamp: new Date().toISOString(),
-      })
-    }
   }
 
   const startEditMeal = (meal: Meal) => {
@@ -665,15 +344,6 @@ export default function MealsPage() {
   const viewMealIngredients = (meal: Meal) => {
     setSelectedMeal(meal)
     setIsViewIngredientsDialogOpen(true)
-  }
-
-  const handleIngredientSelect = (ingredientId: number) => {
-    const inventoryItem = inventory.find((item) => item.id === ingredientId)
-    setNewIngredient({
-      ...newIngredient,
-      ingredientId,
-      unit: inventoryItem?.unit || "g",
-    })
   }
 
   const container = {
@@ -689,34 +359,6 @@ export default function MealsPage() {
   const item = {
     hidden: { opacity: 0, y: 20 },
     show: { opacity: 1, y: 0 },
-  }
-
-  if (isLoading) {
-    return (
-      <div className="container mx-auto py-6">
-        <div className="flex justify-center items-center h-64">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-amber-500 mx-auto mb-4"></div>
-            <p className="text-amber-700">Loading meals...</p>
-          </div>
-        </div>
-      </div>
-    )
-  }
-
-  if (error) {
-    return (
-      <div className="container mx-auto py-6">
-        <div className="bg-red-50 border border-red-200 rounded-md p-4 mb-6">
-          <h2 className="text-red-700 text-lg font-semibold mb-2">Error Loading Meals</h2>
-          <p className="text-red-600">{error}</p>
-          <p className="text-red-600 mt-2">Using sample data instead.</p>
-        </div>
-
-        {/* Rest of the component with sample data */}
-        {/* ... */}
-      </div>
-    )
   }
 
   return (
@@ -762,6 +404,7 @@ export default function MealsPage() {
                     className="col-span-3"
                   />
                 </div>
+
                 <div className="grid grid-cols-4 items-center gap-4">
                   <Label htmlFor="meal-description" className="text-right">
                     Description
@@ -773,6 +416,7 @@ export default function MealsPage() {
                     className="col-span-3"
                   />
                 </div>
+
                 <div className="border p-4 rounded-md border-amber-200">
                   <h3 className="font-medium mb-2 text-amber-700">Add Ingredients</h3>
                   <div className="grid grid-cols-12 gap-2 mb-4">
@@ -780,9 +424,9 @@ export default function MealsPage() {
                       <Label htmlFor="ingredient-select">Ingredient</Label>
                       <select
                         id="ingredient-select"
-                        className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                        className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                         value={newIngredient.ingredientId}
-                        onChange={(e) => handleIngredientSelect(Number(e.target.value))}
+                        onChange={(e) => setNewIngredient({ ...newIngredient, ingredientId: Number(e.target.value) })}
                       >
                         <option value={0}>Select ingredient</option>
                         {inventory.map((item) => (
@@ -797,7 +441,6 @@ export default function MealsPage() {
                       <Input
                         id="ingredient-quantity"
                         type="number"
-                        min="0"
                         value={newIngredient.quantity}
                         onChange={(e) => setNewIngredient({ ...newIngredient, quantity: Number(e.target.value) })}
                       />
@@ -815,6 +458,7 @@ export default function MealsPage() {
                       </Button>
                     </div>
                   </div>
+
                   <div className="mt-4">
                     <h4 className="font-medium mb-2 text-amber-700">Ingredients in this meal:</h4>
                     {newMeal.ingredients && newMeal.ingredients.length > 0 ? (
@@ -1056,231 +700,350 @@ export default function MealsPage() {
 
       {/* Edit Meal Dialog */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent className="max-w-3xl border-amber-200">
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto border-amber-200">
           <DialogHeader>
-            <DialogTitle className="text-amber-700">Edit Meal</DialogTitle>
-            <DialogDescription>Update the meal recipe and ingredients.</DialogDescription>
+            <DialogTitle className="text-2xl text-amber-700 flex items-center">
+              <Utensils className="mr-2 h-6 w-6" />
+              Edit Meal: {selectedMeal?.name}
+            </DialogTitle>
+            <DialogDescription>
+              Update the meal recipe and manage ingredients with real-time tracking.
+            </DialogDescription>
           </DialogHeader>
           {selectedMeal && (
-            <div className="grid gap-4 py-4">
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="edit-meal-name" className="text-right">
-                  Meal Name
-                </Label>
-                <Input
-                  id="edit-meal-name"
-                  value={selectedMeal.name}
-                  onChange={(e) => setSelectedMeal({ ...selectedMeal, name: e.target.value })}
-                  className="col-span-3"
-                />
+            <div className="space-y-6 py-4">
+              {/* Basic Meal Info */}
+              <div className="bg-amber-50 p-4 rounded-lg border border-amber-200">
+                <h3 className="font-semibold mb-3 text-amber-800 flex items-center">
+                  <Edit className="mr-2 h-4 w-4" />
+                  Basic Information
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="edit-meal-name" className="text-sm font-medium text-gray-700">
+                      Meal Name
+                    </Label>
+                    <Input
+                      id="edit-meal-name"
+                      value={selectedMeal.name}
+                      onChange={(e) => setSelectedMeal({ ...selectedMeal, name: e.target.value })}
+                      className="mt-1 border-amber-300 focus:border-amber-500"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="edit-meal-description" className="text-sm font-medium text-gray-700">
+                      Description
+                    </Label>
+                    <Input
+                      id="edit-meal-description"
+                      value={selectedMeal.description}
+                      onChange={(e) => setSelectedMeal({ ...selectedMeal, description: e.target.value })}
+                      className="mt-1 border-amber-300 focus:border-amber-500"
+                    />
+                  </div>
+                </div>
               </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="edit-meal-description" className="text-right">
-                  Description
-                </Label>
-                <Input
-                  id="edit-meal-description"
-                  value={selectedMeal.description}
-                  onChange={(e) => setSelectedMeal({ ...selectedMeal, description: e.target.value })}
-                  className="col-span-3"
-                />
+
+              {/* Current Ingredients Management */}
+              <div className="bg-white border-2 border-amber-200 rounded-lg p-6 shadow-sm">
+                <h3 className="font-semibold mb-4 text-amber-800 flex items-center text-lg">
+                  <Package className="mr-2 h-5 w-5" />
+                  Current Ingredients
+                  <Badge variant="outline" className="ml-2 bg-amber-100 text-amber-800">
+                    {selectedMeal.ingredients.length} items
+                  </Badge>
+                </h3>
+
+                <div className="space-y-3">
+                  {selectedMeal.ingredients.map((ingredient, index) => {
+                    const inventoryItem = inventory.find((item) => item.id === ingredient.ingredientId)
+                    const maxAvailable = inventoryItem?.quantity || 0
+
+                    return (
+                      <motion.div
+                        key={index}
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="bg-gray-50 border border-gray-200 rounded-lg p-4 hover:shadow-md transition-all duration-200"
+                      >
+                        <div className="flex items-center justify-between mb-3">
+                          <div className="flex items-center space-x-3">
+                            <div className="bg-amber-100 p-2 rounded-full">
+                              <Package className="h-4 w-4 text-amber-600" />
+                            </div>
+                            <div>
+                              <h4 className="font-medium text-gray-900">{ingredient.name}</h4>
+                              <p className="text-sm text-gray-500">
+                                Available: {maxAvailable} {ingredient.unit}
+                              </p>
+                            </div>
+                          </div>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleRemoveIngredientFromSelectedMeal(index)}
+                            className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                          >
+                            <Trash className="h-4 w-4" />
+                          </Button>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+                          <div className="md:col-span-2">
+                            <Label className="text-sm font-medium text-gray-700 mb-2 block">
+                              Quantity Required ({ingredient.unit})
+                            </Label>
+                            <div className="flex items-center space-x-2">
+                              <Input
+                                type="number"
+                                min="0"
+                                max={maxAvailable}
+                                value={ingredient.quantity}
+                                onChange={(e) => {
+                                  const newQuantity = Number(e.target.value)
+                                  const oldQuantity = ingredient.quantity
+
+                                  // Update the ingredient quantity
+                                  const updatedIngredients = [...selectedMeal.ingredients]
+                                  updatedIngredients[index] = { ...ingredient, quantity: newQuantity }
+                                  setSelectedMeal({ ...selectedMeal, ingredients: updatedIngredients })
+
+                                  // Send notification about the change
+                                  if (sendMessage && newQuantity !== oldQuantity) {
+                                    const changeAmount = newQuantity - oldQuantity
+                                    const changeType = changeAmount > 0 ? "increased" : "decreased"
+
+                                    sendMessage({
+                                      type: "ingredient_quantity_updated",
+                                      message: `Ingredient quantity ${changeType} for ${ingredient.name}`,
+                                      data: {
+                                        ingredientName: ingredient.name,
+                                        mealName: selectedMeal.name,
+                                        oldQuantity: oldQuantity,
+                                        newQuantity: newQuantity,
+                                        changeAmount: Math.abs(changeAmount),
+                                        changeType: changeType,
+                                        unit: ingredient.unit,
+                                        availableStock: maxAvailable,
+                                      },
+                                    })
+                                  }
+                                }}
+                                className="border-amber-300 focus:border-amber-500"
+                              />
+                              <span className="text-sm text-gray-500 min-w-[40px]">{ingredient.unit}</span>
+                            </div>
+                            {ingredient.quantity > maxAvailable && (
+                              <p className="text-red-500 text-xs mt-1 flex items-center">
+                                <AlertCircle className="h-3 w-3 mr-1" />
+                                Exceeds available stock by {ingredient.quantity - maxAvailable} {ingredient.unit}
+                              </p>
+                            )}
+                          </div>
+
+                          <div className="text-right">
+                            <div className="text-sm text-gray-500 mb-1">Stock Status</div>
+                            <Badge
+                              variant={ingredient.quantity <= maxAvailable ? "outline" : "destructive"}
+                              className={
+                                ingredient.quantity <= maxAvailable ? "bg-green-50 text-green-700 border-green-300" : ""
+                              }
+                            >
+                              {ingredient.quantity <= maxAvailable ? "✓ Available" : "⚠ Insufficient"}
+                            </Badge>
+                          </div>
+                        </div>
+
+                        {/* Quick adjustment buttons */}
+                        <div className="flex items-center justify-between mt-3 pt-3 border-t border-gray-200">
+                          <div className="flex space-x-1">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                const newQuantity = Math.max(0, ingredient.quantity - 10)
+                                const updatedIngredients = [...selectedMeal.ingredients]
+                                updatedIngredients[index] = { ...ingredient, quantity: newQuantity }
+                                setSelectedMeal({ ...selectedMeal, ingredients: updatedIngredients })
+
+                                if (sendMessage) {
+                                  sendMessage({
+                                    type: "ingredient_quantity_updated",
+                                    message: `Decreased ${ingredient.name} by 10 ${ingredient.unit}`,
+                                    data: {
+                                      ingredientName: ingredient.name,
+                                      mealName: selectedMeal.name,
+                                      oldQuantity: ingredient.quantity,
+                                      newQuantity: newQuantity,
+                                      changeAmount: 10,
+                                      changeType: "decreased",
+                                      unit: ingredient.unit,
+                                    },
+                                  })
+                                }
+                              }}
+                              className="text-xs px-2 py-1 h-7"
+                            >
+                              -10
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                const newQuantity = Math.min(maxAvailable, ingredient.quantity + 10)
+                                const updatedIngredients = [...selectedMeal.ingredients]
+                                updatedIngredients[index] = { ...ingredient, quantity: newQuantity }
+                                setSelectedMeal({ ...selectedMeal, ingredients: updatedIngredients })
+
+                                if (sendMessage) {
+                                  sendMessage({
+                                    type: "ingredient_quantity_updated",
+                                    message: `Increased ${ingredient.name} by 10 ${ingredient.unit}`,
+                                    data: {
+                                      ingredientName: ingredient.name,
+                                      mealName: selectedMeal.name,
+                                      oldQuantity: ingredient.quantity,
+                                      newQuantity: newQuantity,
+                                      changeAmount: 10,
+                                      changeType: "increased",
+                                      unit: ingredient.unit,
+                                    },
+                                  })
+                                }
+                              }}
+                              className="text-xs px-2 py-1 h-7"
+                            >
+                              +10
+                            </Button>
+                          </div>
+                          <div className="text-xs text-gray-500">Last updated: {new Date().toLocaleTimeString()}</div>
+                        </div>
+                      </motion.div>
+                    )
+                  })}
+                </div>
               </div>
-              <div className="border p-4 rounded-md border-amber-200">
-                <h3 className="font-medium mb-2 text-amber-700">Ingredients</h3>
-                <div className="grid grid-cols-12 gap-2 mb-4">
-                  <div className="col-span-5">
-                    <Label htmlFor="edit-ingredient-select">Ingredient</Label>
+
+              {/* Add New Ingredient Section */}
+              <div className="bg-blue-50 border-2 border-blue-200 rounded-lg p-6">
+                <h3 className="font-semibold mb-4 text-blue-800 flex items-center text-lg">
+                  <Plus className="mr-2 h-5 w-5" />
+                  Add New Ingredient
+                </h3>
+
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+                  <div className="md:col-span-2">
+                    <Label htmlFor="edit-ingredient-select" className="text-sm font-medium text-gray-700 mb-2 block">
+                      Select Ingredient
+                    </Label>
                     <select
                       id="edit-ingredient-select"
-                      className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                      className="flex h-10 w-full rounded-md border border-blue-300 bg-white px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
                       value={newIngredient.ingredientId}
-                      onChange={(e) => handleIngredientSelect(Number(e.target.value))}
+                      onChange={(e) => {
+                        const selectedId = Number(e.target.value)
+                        const selectedItem = inventory.find((item) => item.id === selectedId)
+                        setNewIngredient({
+                          ...newIngredient,
+                          ingredientId: selectedId,
+                          unit: selectedItem?.unit || "g",
+                        })
+                      }}
                     >
-                      <option value={0}>Select ingredient</option>
-                      {inventory.map((item) => (
-                        <option key={item.id} value={item.id}>
-                          {item.name} ({item.quantity} {item.unit} available)
-                        </option>
-                      ))}
+                      <option value={0}>Choose an ingredient...</option>
+                      {inventory
+                        .filter((item) => !selectedMeal.ingredients.some((ing) => ing.ingredientId === item.id))
+                        .map((item) => (
+                          <option key={item.id} value={item.id}>
+                            {item.name} ({item.quantity} {item.unit} available)
+                          </option>
+                        ))}
                     </select>
                   </div>
-                  <div className="col-span-3">
-                    <Label htmlFor="edit-ingredient-quantity">Quantity</Label>
+
+                  <div>
+                    <Label htmlFor="edit-ingredient-quantity" className="text-sm font-medium text-gray-700 mb-2 block">
+                      Quantity
+                    </Label>
                     <Input
                       id="edit-ingredient-quantity"
                       type="number"
                       min="0"
                       value={newIngredient.quantity}
                       onChange={(e) => setNewIngredient({ ...newIngredient, quantity: Number(e.target.value) })}
+                      className="border-blue-300 focus:border-blue-500"
+                      placeholder="0"
                     />
                   </div>
-                  <div className="col-span-2">
-                    <Label htmlFor="edit-ingredient-unit">Unit</Label>
-                    <Input id="edit-ingredient-unit" value={newIngredient.unit} disabled />
-                  </div>
-                  <div className="col-span-2 flex items-end">
-                    <Button
-                      onClick={() => {
-                        if (
-                          !newIngredient.ingredientId ||
-                          !newIngredient.quantity ||
-                          newIngredient.quantity <= 0 ||
-                          !user
-                        ) {
-                          toast({
-                            title: "Invalid Input",
-                            description: "Please select an ingredient and enter a valid quantity.",
-                            variant: "destructive",
-                          })
-                          return
-                        }
 
-                        const inventoryItem = inventory.find((item) => item.id === newIngredient.ingredientId)
-                        if (!inventoryItem) return
+                  <Button
+                    onClick={() => {
+                      if (!newIngredient.ingredientId || !newIngredient.quantity) return
 
-                        // Check if ingredient already exists in the meal
-                        const existingIngredientIndex = selectedMeal.ingredients.findIndex(
-                          (ing) => ing.ingredientId === newIngredient.ingredientId,
-                        )
+                      const inventoryItem = inventory.find((item) => item.id === newIngredient.ingredientId)
+                      if (!inventoryItem) return
 
-                        if (existingIngredientIndex >= 0) {
-                          // Update existing ingredient quantity
-                          const updatedIngredients = [...selectedMeal.ingredients]
-                          updatedIngredients[existingIngredientIndex] = {
-                            ...updatedIngredients[existingIngredientIndex],
-                            quantity:
-                              updatedIngredients[existingIngredientIndex].quantity + Number(newIngredient.quantity),
-                          }
+                      const ingredientToAdd: MealIngredient = {
+                        ingredientId: newIngredient.ingredientId,
+                        name: inventoryItem.name,
+                        quantity: Number(newIngredient.quantity),
+                        unit: inventoryItem.unit,
+                      }
 
-                          setSelectedMeal({
-                            ...selectedMeal,
-                            ingredients: updatedIngredients,
-                          })
+                      setSelectedMeal({
+                        ...selectedMeal,
+                        ingredients: [...selectedMeal.ingredients, ingredientToAdd],
+                      })
 
-                          // Send notification
-                          const notificationMessage = `${user.name} updated ingredient "${inventoryItem.name}" quantity to ${updatedIngredients[existingIngredientIndex].quantity} ${inventoryItem.unit} in meal "${selectedMeal.name}"`
-
-                          if (sendMessage) {
-                            sendMessage({
-                              type: "meal_updated",
-                              message: notificationMessage,
-                              user: { id: user.id, name: user.name, role: user.role },
-                              data: {
-                                mealId: selectedMeal.id,
-                                mealName: selectedMeal.name,
-                                updatedIngredient: updatedIngredients[existingIngredientIndex],
-                                updatedBy: user.name,
-                                updatedAt: new Date().toISOString(),
-                              },
-                              timestamp: new Date().toISOString(),
-                            })
-                          }
-
-                          toast({
-                            title: "Ingredient Updated",
-                            description: `Updated ${inventoryItem.name} quantity in the meal.`,
-                          })
-                        } else {
-                          // Add new ingredient
-                          const ingredientToAdd: MealIngredient = {
-                            ingredientId: newIngredient.ingredientId,
-                            name: inventoryItem.name,
-                            quantity: Number(newIngredient.quantity),
+                      // Send notification about adding new ingredient
+                      if (sendMessage) {
+                        sendMessage({
+                          type: "ingredient_added_to_meal",
+                          message: `Added ${inventoryItem.name} to ${selectedMeal.name}`,
+                          data: {
+                            ingredientName: inventoryItem.name,
+                            mealName: selectedMeal.name,
+                            quantity: newIngredient.quantity,
                             unit: inventoryItem.unit,
-                          }
-
-                          setSelectedMeal({
-                            ...selectedMeal,
-                            ingredients: [...selectedMeal.ingredients, ingredientToAdd],
-                          })
-
-                          // Send notification
-                          const notificationMessage = `${user.name} added ingredient "${inventoryItem.name}": ${newIngredient.quantity} ${newIngredient.unit} to meal "${selectedMeal.name}"`
-
-                          if (sendMessage) {
-                            sendMessage({
-                              type: "meal_updated",
-                              message: notificationMessage,
-                              user: { id: user.id, name: user.name, role: user.role },
-                              data: {
-                                mealId: selectedMeal.id,
-                                mealName: selectedMeal.name,
-                                addedIngredient: ingredientToAdd,
-                                updatedBy: user.name,
-                                updatedAt: new Date().toISOString(),
-                              },
-                              timestamp: new Date().toISOString(),
-                            })
-                          }
-                        }
-
-                        setNewIngredient({
-                          ingredientId: 0,
-                          name: "",
-                          quantity: 0,
-                          unit: "g",
+                            availableStock: inventoryItem.quantity,
+                          },
                         })
-                      }}
-                      className="w-full bg-amber-500 hover:bg-amber-600 text-white"
-                    >
-                      Add
-                    </Button>
-                  </div>
-                </div>
-                <div className="mt-4">
-                  <h4 className="font-medium mb-2 text-amber-700">Current ingredients:</h4>
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Ingredient</TableHead>
-                        <TableHead>Quantity</TableHead>
-                        <TableHead>Unit</TableHead>
-                        <TableHead className="w-[100px]">Actions</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {selectedMeal.ingredients.map((ingredient, index) => (
-                        <TableRow key={index}>
-                          <TableCell>{ingredient.name}</TableCell>
-                          <TableCell>
-                            <Input
-                              type="number"
-                              min="0"
-                              value={ingredient.quantity}
-                              onChange={(e) => handleUpdateIngredientQuantity(index, Number(e.target.value))}
-                              className="w-20"
-                            />
-                          </TableCell>
-                          <TableCell>{ingredient.unit}</TableCell>
-                          <TableCell>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => handleRemoveIngredientFromSelectedMeal(index)}
-                              className="text-red-500 hover:text-red-700 hover:bg-red-50"
-                            >
-                              <Trash className="h-4 w-4" />
-                            </Button>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
+                      }
+
+                      setNewIngredient({
+                        ingredientId: 0,
+                        name: "",
+                        quantity: 0,
+                        unit: "g",
+                      })
+                    }}
+                    disabled={!newIngredient.ingredientId || !newIngredient.quantity}
+                    className="bg-blue-600 hover:bg-blue-700 text-white h-10"
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add Ingredient
+                  </Button>
                 </div>
               </div>
             </div>
           )}
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setIsEditDialogOpen(false)}
-              className="border-amber-300 text-amber-700 hover:bg-amber-50"
-            >
-              Cancel
-            </Button>
-            <Button onClick={handleUpdateMeal} className="bg-amber-500 hover:bg-amber-600 text-white">
-              Save Changes
-            </Button>
+          <DialogFooter className="bg-gray-50 px-6 py-4 -mx-6 -mb-6 mt-6">
+            <div className="flex justify-between items-center w-full">
+              <div className="text-sm text-gray-500">Total ingredients: {selectedMeal?.ingredients.length || 0}</div>
+              <div className="flex space-x-3">
+                <Button
+                  variant="outline"
+                  onClick={() => setIsEditDialogOpen(false)}
+                  className="border-amber-300 text-amber-700 hover:bg-amber-50"
+                >
+                  Cancel
+                </Button>
+                <Button onClick={handleUpdateMeal} className="bg-amber-500 hover:bg-amber-600 text-white">
+                  <Check className="h-4 w-4 mr-2" />
+                  Save Changes
+                </Button>
+              </div>
+            </div>
           </DialogFooter>
         </DialogContent>
       </Dialog>

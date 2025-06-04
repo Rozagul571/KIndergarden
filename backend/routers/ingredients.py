@@ -25,12 +25,19 @@ async def create_ingredient(ingredient: IngredientCreate, db: Session = Depends(
     elif ingredient.quantity <= ingredient.threshold:
         status = IngredientStatus.LOW
     
-    db_ingredient = Ingredient(name=ingredient.name, quantity=ingredient.quantity,unit=ingredient.unit, threshold=ingredient.threshold, status=status, created_by=current_user.id
+    db_ingredient = Ingredient(
+        name=ingredient.name,
+        quantity=ingredient.quantity,
+        unit=ingredient.unit,
+        threshold=ingredient.threshold,
+        status=status,
+        created_by=current_user.id
     )
     db.add(db_ingredient)
     db.commit()
     db.refresh(db_ingredient)
     
+    # Notify via WebSocket
     await manager.broadcast(json.dumps({
         "type": "ingredient_created",
         "message": f"New ingredient {db_ingredient.name} added by {current_user.name}",

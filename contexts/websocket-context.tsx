@@ -75,6 +75,7 @@ export function WebSocketProvider({
     const setupMockMode = () => {
       mockMode = true
       setConnectionType("mock")
+      setConnected(true)
       console.log("Using mock WebSocket mode")
     }
 
@@ -323,6 +324,15 @@ export function WebSocketProvider({
           break
         case "order_status_update":
           notificationMessage = `${userName} ${msgObj.data?.status?.toLowerCase() || "updated"} order #${msgObj.data?.id || ""} for ${msgObj.data?.ingredientName || "an ingredient"}`
+          break
+        case "ingredient_quantity_updated":
+          notificationMessage = `${userName} ${msgObj.data?.changeType || "updated"} ${msgObj.data?.ingredientName || "ingredient"} by ${msgObj.data?.changeAmount || ""} ${msgObj.data?.unit || ""} in ${msgObj.data?.mealName || "meal"} (${msgObj.data?.oldQuantity || ""} → ${msgObj.data?.newQuantity || ""} ${msgObj.data?.unit || ""})`
+          break
+        case "ingredient_added_to_meal":
+          notificationMessage = `${userName} added ${msgObj.data?.quantity || ""} ${msgObj.data?.unit || ""} of ${msgObj.data?.ingredientName || "ingredient"} to ${msgObj.data?.mealName || "meal"} (${msgObj.data?.availableStock || ""} ${msgObj.data?.unit || ""} available in stock)`
+          break
+        case "meal_updated_comprehensive":
+          notificationMessage = `${userName} updated meal "${msgObj.data?.mealName || ""}" with ${msgObj.data?.totalIngredients || 0} ingredients`
           break
         default:
           notificationMessage = msgObj.message || "Action completed"

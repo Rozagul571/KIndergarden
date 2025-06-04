@@ -44,6 +44,7 @@ class User(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
+    # Relationships
     servings = relationship("MealServing", back_populates="user")
     deliveries = relationship("IngredientDelivery", back_populates="user")
     orders = relationship("Order", back_populates="created_by_user")
@@ -63,6 +64,7 @@ class Ingredient(Base):
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     created_by = Column(Integer, ForeignKey("users.id"))
     
+    # Relationships
     meal_ingredients = relationship("MealIngredient", back_populates="ingredient")
     deliveries = relationship("IngredientDelivery", back_populates="ingredient")
     orders = relationship("Order", back_populates="ingredient")
@@ -122,7 +124,7 @@ class MealServing(Base):
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     user_id = Column(Integer, ForeignKey("users.id"))
     
-    
+    # Relationships
     meal = relationship("Meal", back_populates="servings")
     user = relationship("User", back_populates="servings")
 
